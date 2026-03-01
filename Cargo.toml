@@ -7,6 +7,7 @@ edition = "2024"
 clap = { version = "4", features = ["derive"] }
 color-eyre = "0.6"
 env_logger = "0.11"
+indicatif = "0.18"
 log = "0.4"
 nusb = "0.2"
 

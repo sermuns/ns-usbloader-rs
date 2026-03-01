@@ -1,6 +1,9 @@
+// TODO: handle transfer cancelled gracefully
+
 use clap::Parser;
 use color_eyre::eyre::{ContextCompat, bail};
-use log::{error, info};
+use indicatif::ProgressBar;
+use log::{debug, error, info, warn};
 use nusb::{
     Endpoint, MaybeFuture, list_devices,
     transfer::{Buffer, Bulk, In, Out, TransferError},
@@ -8,8 +11,8 @@ use nusb::{
 use std::{
     fs::File,
     io::{BufReader, Read, Seek, SeekFrom},
+    os::unix::fs::MetadataExt,
     path::PathBuf,
-    thread::sleep,
     time::Duration,
 };
 
@@ -47,21 +50,27 @@ fn main() -> color_eyre::Result<()> {
         bail!("NSP directory does not exist");
     }
 
-    let nsp_paths: Vec<_> = args
+    let nsps: Vec<_> = args
         .nsp_dir
         .read_dir()?
         .filter_map(|entry_result| {
             let entry = entry_result.ok()?;
             let path = entry.path();
-            (path.extension()? == "nsp").then_some(path)
+            if path.extension()? != "nsp" {
+                return None;
+            }
+            Some((
+                path.into_os_string().into_string().unwrap() + "\n",
+                entry.metadata().unwrap().size(),
+            ))
         })
         .collect();
-    if nsp_paths.is_empty() {
+    if nsps.is_empty() {
         bail!("no NSPs found in given directory");
     }
-    let total_path_str_len = nsp_paths
+    let total_nsp_paths_len = nsps
         .iter()
-        .fold(0, |acc, path| acc + path.as_os_str().len() + 1); // +1 for \n
+        .fold(0, |acc, (nsp_path, _)| acc + nsp_path.len());
 
     let device_info = list_devices()
         .wait()?
@@ -81,37 +90,36 @@ fn main() -> color_eyre::Result<()> {
     let mut ep_in = interface.endpoint::<Bulk, In>(0x81)?;
     ep_in.clear_halt().wait()?;
 
-    // TODO: handle transfer cancelled gracefully
+    debug!("sending nsp list");
     write_usb(&mut ep_out, "TUL0")?;
-    write_usb(&mut ep_out, &total_path_str_len.to_le_bytes()[..4])?;
+    write_usb(&mut ep_out, &total_nsp_paths_len.to_le_bytes()[..4])?;
     write_usb(&mut ep_out, [0u8; 8])?;
-
-    sleep(Duration::from_millis(100));
-    for nsp_path in &nsp_paths {
-        write_usb(&mut ep_out, format!("{}\n", nsp_path.to_str().unwrap()))?;
+    for (nsp_path, _) in &nsps {
+        write_usb(&mut ep_out, nsp_path.as_str())?;
     }
-    info!("sent pre-stuff");
+
+    let mut pb = ProgressBar::new(0);
 
     loop {
-        info!("waiting for header...");
+        debug!("waiting for header...");
         let command_header = ep_in
             .transfer_blocking(Buffer::new(512), Duration::MAX)
             .into_result()?;
-        info!("got header: {:#?}", &command_header);
+        debug!("got header: {:#?}", &command_header);
 
         if &command_header[..4] != b"TUC0" {
             error!("invalid command header magic. continuing to next iteration...");
             continue;
         }
-        info!("correct command header magic");
+        debug!("correct command header magic");
 
         let command_type: [u8; 1] = command_header[4..5].try_into().unwrap();
         let command_id: [u8; 4] = command_header[8..12].try_into().unwrap();
-        let data_size = u64::from_le_bytes(command_header[12..20].try_into().unwrap());
+        // let data_size = u64::from_le_bytes(command_header[12..20].try_into().unwrap());
 
-        info!(
-            "Command type: {:?}, Command id: {:?}, Data size: {}",
-            &command_type, &command_id, data_size
+        debug!(
+            "Command type: {:?}, Command id: {:?}",
+            &command_type, &command_id
         );
 
         match command_id {
@@ -121,7 +129,7 @@ fn main() -> color_eyre::Result<()> {
             }
             tinfoil_command_ids::FILE_RANGE => {
                 info!("got file range command");
-                file_range_command(&mut ep_in, &mut ep_out)?
+                file_range_command(&mut ep_in, &mut ep_out, &mut pb, &nsps)?
             }
             _ => bail!("invalid command ID encountered!"),
         }
@@ -133,6 +141,8 @@ fn main() -> color_eyre::Result<()> {
 fn file_range_command(
     ep_in: &mut Endpoint<Bulk, In>,
     ep_out: &mut Endpoint<Bulk, Out>,
+    pb: &mut ProgressBar,
+    nsps: &[(String, u64)],
 ) -> color_eyre::Result<()> {
     let file_range_header = read_usb(ep_in)?;
 
@@ -142,6 +152,17 @@ fn file_range_command(
 
     let nsp_name_buf = read_usb(ep_in)?;
     let nsp_path = str::from_utf8(&nsp_name_buf)?;
+
+    let Some((_, nsp_size)) = nsps
+        .iter()
+        .find(|(path, _)| path.len() == nsp_path.len() + 1 && *nsp_path == path[..nsp_path.len()])
+    else {
+        warn!("{:#?}", nsps);
+        warn!("requested: {:#?}", nsp_path);
+        bail!("NS tried to request NSP not present on host");
+    };
+
+    pb.set_length(*nsp_size);
 
     info!(
         "Range size: {}, Range offset: {}, Name len: {}, Name: {}",
@@ -174,6 +195,7 @@ fn file_range_command(
         info!("sent {} bytes", read_size);
 
         current_offset += read_size;
+        pb.set_position(current_offset as u64);
     }
 
     Ok(())
