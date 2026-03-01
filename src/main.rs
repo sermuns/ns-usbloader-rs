@@ -4,7 +4,7 @@ use color_eyre::{
     eyre::{ContextCompat, bail, eyre},
 };
 use indicatif::{ProgressBar, ProgressStyle};
-use log::{debug, error, info, warn};
+use log::{debug, error, info};
 use nusb::{
     Endpoint, MaybeFuture, list_devices,
     transfer::{Buffer, Bulk, In, Out, TransferError},
@@ -64,9 +64,10 @@ fn file_range_command(
         .iter()
         .any(|path| path.len() == game_path.len() + 1 && *game_path == path[..game_path.len()])
     {
-        warn!("{:#?}", game_paths);
-        warn!("requested: {:#?}", game_path);
-        bail!("Nintendo Switch tried to request game backup not present on host");
+        bail!(
+            "Nintendo Switch tried to request game backup ({}) not present on host",
+            game_path
+        );
     };
 
     info!("sending {}", &game_path);
@@ -136,7 +137,7 @@ mod tinfoil_command_ids {
 
 #[derive(Parser)]
 struct Args {
-    game_backup_dir: PathBuf,
+    game_backup_path: PathBuf,
 }
 
 fn main() -> color_eyre::Result<()> {
@@ -148,33 +149,47 @@ fn main() -> color_eyre::Result<()> {
 
     let args = Args::parse();
 
-    if !args.game_backup_dir.exists() {
+    if !args.game_backup_path.exists() {
         bail!(
             "Given path ({}) does not exist",
-            args.game_backup_dir.display()
-        )
-    }
-    if !args.game_backup_dir.is_dir() {
-        bail!(
-            "Given path ({}) is not a directory",
-            args.game_backup_dir.display()
+            args.game_backup_path.display()
         )
     }
 
-    let game_paths: Vec<_> = args
-        .game_backup_dir
-        .read_dir()?
-        .filter_map(|entry_result| {
-            let entry = entry_result.ok()?;
-            let path = entry.path();
-            let ext = path.extension()?;
-            (ext == "nsp").then_some(path.into_os_string().into_string().unwrap() + "\n")
-        })
-        .collect();
+    let game_paths: Vec<_> = if args.game_backup_path.is_dir() {
+        args.game_backup_path
+            .read_dir()?
+            .filter_map(|entry_result| {
+                let entry = entry_result.ok()?;
+                let path = entry.path();
+                let ext = path.extension()?;
+                (ext == "nsp").then_some(path.into_os_string().into_string().unwrap() + "\n")
+            })
+            .collect()
+    } else if args
+        .game_backup_path
+        .extension()
+        .is_some_and(|ext| ext == "nsp")
+    {
+        vec![
+            args.game_backup_path
+                .as_os_str()
+                .to_str()
+                .unwrap()
+                .to_owned()
+                + "\n",
+        ]
+    } else {
+        bail!(
+            "Given path ({}) is not a directory or an NSP file",
+            args.game_backup_path.display()
+        )
+    };
+
     if game_paths.is_empty() {
         bail!(
             "No game backup files found in given directory ({})",
-            args.game_backup_dir.display()
+            args.game_backup_path.display()
         )
     }
     let all_paths_string_length = game_paths.iter().fold(0, |acc, path| acc + path.len());

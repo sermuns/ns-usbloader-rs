@@ -42,10 +42,10 @@ Both of these methods places `ns-usbloader-rs` in `~/.cargo/bin/`, which normall
 Here's the output of `ns-usbloader-rs --help`:
 
 ```present cargo run -- -h
-Usage: ns-usbloader-rs <GAME_BACKUP_DIR>
+Usage: ns-usbloader-rs <GAME_BACKUP_PATH>
 
 Arguments:
-  <GAME_BACKUP_DIR>  
+  <GAME_BACKUP_PATH>  
 
 Options:
   -h, --help  Print help
