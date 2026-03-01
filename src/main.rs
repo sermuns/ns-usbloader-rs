@@ -136,6 +136,7 @@ mod tinfoil_command_ids {
 }
 
 #[derive(Parser)]
+#[command(version, about, long_about = None)]
 struct Args {
     game_backup_path: PathBuf,
 }

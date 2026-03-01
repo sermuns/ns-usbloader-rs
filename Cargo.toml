@@ -1,5 +1,6 @@
 [package]
 name = "ns-usbloader-rs"
+description = "Alternative to NS-USBloader. Transfer data to Awoo Installer."
 version = "0.1.0"
 edition = "2024"
 

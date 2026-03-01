@@ -42,11 +42,14 @@ Both of these methods places `ns-usbloader-rs` in `~/.cargo/bin/`, which normall
 Here's the output of `ns-usbloader-rs --help`:
 
 ```present cargo run -- -h
+Alternative to NS-USBloader. Transfer data to Awoo Installer.
+
 Usage: ns-usbloader-rs <GAME_BACKUP_PATH>
 
 Arguments:
   <GAME_BACKUP_PATH>  
 
 Options:
-  -h, --help  Print help
+  -h, --help     Print help
+  -V, --version  Print version
 ```
