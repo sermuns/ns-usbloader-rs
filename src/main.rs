@@ -2,7 +2,7 @@
 
 use clap::Parser;
 use color_eyre::eyre::{ContextCompat, bail};
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 use log::{debug, error, info, warn};
 use nusb::{
     Endpoint, MaybeFuture, list_devices,
@@ -27,7 +27,7 @@ fn write_usb(
 }
 
 fn read_usb(ep_in: &mut Endpoint<Bulk, In>) -> Result<Buffer, TransferError> {
-    // TODO: don't create buffer everytime?
+    // TODO: avoid creating buffer everytime?
     // TODO: figure out if 512 is universal buffer size or just my machine?
     let buf = Buffer::new(512);
     ep_in.transfer_blocking(buf, USB_TIMEOUT).into_result()
@@ -50,7 +50,7 @@ fn main() -> color_eyre::Result<()> {
         bail!("NSP directory does not exist");
     }
 
-    let nsps: Vec<_> = args
+    let nsp_paths: Vec<_> = args
         .nsp_dir
         .read_dir()?
         .filter_map(|entry_result| {
@@ -59,18 +59,13 @@ fn main() -> color_eyre::Result<()> {
             if path.extension()? != "nsp" {
                 return None;
             }
-            Some((
-                path.into_os_string().into_string().unwrap() + "\n",
-                entry.metadata().unwrap().size(),
-            ))
+            Some(path.into_os_string().into_string().unwrap() + "\n")
         })
         .collect();
-    if nsps.is_empty() {
+    if nsp_paths.is_empty() {
         bail!("no NSPs found in given directory");
     }
-    let total_nsp_paths_len = nsps
-        .iter()
-        .fold(0, |acc, (nsp_path, _)| acc + nsp_path.len());
+    let total_nsp_paths_len = nsp_paths.iter().fold(0, |acc, path| acc + path.len());
 
     let device_info = list_devices()
         .wait()?
@@ -94,11 +89,13 @@ fn main() -> color_eyre::Result<()> {
     write_usb(&mut ep_out, "TUL0")?;
     write_usb(&mut ep_out, &total_nsp_paths_len.to_le_bytes()[..4])?;
     write_usb(&mut ep_out, [0u8; 8])?;
-    for (nsp_path, _) in &nsps {
+    for nsp_path in &nsp_paths {
         write_usb(&mut ep_out, nsp_path.as_str())?;
     }
 
-    let mut pb = ProgressBar::new(0);
+    let mut pb = ProgressBar::no_length().with_style(
+        ProgressStyle::with_template("[{elapsed}] ETA: {eta} {wide_bar} {binary_bytes_per_sec} {binary_bytes}/{binary_total_bytes}").unwrap(),
+    );
 
     loop {
         debug!("waiting for header...");
@@ -124,12 +121,13 @@ fn main() -> color_eyre::Result<()> {
 
         match command_id {
             tinfoil_command_ids::EXIT => {
-                info!("got exit command, exiting...");
+                debug!("got exit command, exiting...");
+                pb.finish();
                 break;
             }
             tinfoil_command_ids::FILE_RANGE => {
-                info!("got file range command");
-                file_range_command(&mut ep_in, &mut ep_out, &mut pb, &nsps)?
+                debug!("got file range command");
+                file_range_command(&mut ep_in, &mut ep_out, &mut pb, &nsp_paths)?
             }
             _ => bail!("invalid command ID encountered!"),
         }
@@ -142,7 +140,7 @@ fn file_range_command(
     ep_in: &mut Endpoint<Bulk, In>,
     ep_out: &mut Endpoint<Bulk, Out>,
     pb: &mut ProgressBar,
-    nsps: &[(String, u64)],
+    nsps: &[String],
 ) -> color_eyre::Result<()> {
     let file_range_header = read_usb(ep_in)?;
 
@@ -153,16 +151,14 @@ fn file_range_command(
     let nsp_name_buf = read_usb(ep_in)?;
     let nsp_path = str::from_utf8(&nsp_name_buf)?;
 
-    let Some((_, nsp_size)) = nsps
+    if !nsps
         .iter()
-        .find(|(path, _)| path.len() == nsp_path.len() + 1 && *nsp_path == path[..nsp_path.len()])
-    else {
+        .any(|path| path.len() == nsp_path.len() + 1 && *nsp_path == path[..nsp_path.len()])
+    {
         warn!("{:#?}", nsps);
         warn!("requested: {:#?}", nsp_path);
         bail!("NS tried to request NSP not present on host");
     };
-
-    pb.set_length(*nsp_size);
 
     info!(
         "Range size: {}, Range offset: {}, Name len: {}, Name: {}",
@@ -172,6 +168,11 @@ fn file_range_command(
     send_response_header(ep_out, range_size)?;
 
     let file = File::open(nsp_path)?;
+
+    if let Ok(metadata) = file.metadata() {
+        pb.set_length(metadata.size());
+    }
+
     let mut reader = BufReader::new(file);
 
     reader.seek(SeekFrom::Start(range_offset))?;
@@ -187,6 +188,7 @@ fn file_range_command(
             info!("too big read_size ({}), resizing...", read_size);
             read_size = end_offset - current_offset;
             buf.resize(read_size, 0u8);
+            pb.reset_elapsed();
         }
         reader.read_exact(&mut buf)?;
 
