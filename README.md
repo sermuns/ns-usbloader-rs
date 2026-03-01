@@ -45,7 +45,7 @@ Here's the output of `ns-usbloader-rs --help`:
 Usage: ns-usbloader-rs <GAME_BACKUP_DIR>
 
 Arguments:
-  <GAME_BACKUP_DIR>
+  <GAME_BACKUP_DIR>  
 
 Options:
   -h, --help  Print help
