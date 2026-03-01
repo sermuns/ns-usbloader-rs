@@ -31,10 +31,12 @@ fn write_usb(
         .transfer_blocking(buf.into(), USB_TIMEOUT)
         .status
         .map_err(|e| match e {
-            TransferError::Cancelled => eyre!("Nintendo Switch is not accepting transfers.\n Is Awoo Installer open in the menu 'Install Over USB'?"),
-            TransferError::Fault | TransferError::Stall => eyre!("USB connection error"),
+            TransferError::Cancelled => eyre!("Nintendo Switch is not accepting transfers.")
+                .suggestion("Ensure Awoo Installer is open, and in the menu 'Install Over USB'."),
             TransferError::Disconnected => eyre!("USB has disconnected"),
-            TransferError::InvalidArgument => eyre!("Malformed data during transfer... oops!"),
+            TransferError::Fault | TransferError::Stall | TransferError::InvalidArgument => {
+                eyre!("Malformed data during transfer.")
+            }
             TransferError::Unknown(i) => eyre!("Unknown error {}", i),
         })
 }
@@ -48,42 +50,48 @@ fn read_usb(ep_in: &mut Endpoint<Bulk, In>) -> Result<Buffer, TransferError> {
 
 #[derive(Parser)]
 struct Args {
-    nsp_dir: PathBuf,
+    game_backup_dir: PathBuf,
 }
 
 fn main() -> color_eyre::Result<()> {
     env_logger::builder().format_source_path(true).init();
     color_eyre::config::HookBuilder::default()
         .display_env_section(false)
-        .display_location_section(false)
+        .display_location_section(true)
         .install()?;
 
     let args = Args::parse();
 
-    if !args.nsp_dir.exists() {
-        bail!("Given path ({}) does not exist", args.nsp_dir.display())
+    if !args.game_backup_dir.exists() {
+        bail!(
+            "Given path ({}) does not exist",
+            args.game_backup_dir.display()
+        )
     }
-    if !args.nsp_dir.is_dir() {
-        bail!("Given path ({}) is not a directory", args.nsp_dir.display())
+    if !args.game_backup_dir.is_dir() {
+        bail!(
+            "Given path ({}) is not a directory",
+            args.game_backup_dir.display()
+        )
     }
 
-    let nsp_paths: Vec<_> = args
-        .nsp_dir
+    let game_paths: Vec<_> = args
+        .game_backup_dir
         .read_dir()?
         .filter_map(|entry_result| {
             let entry = entry_result.ok()?;
             let path = entry.path();
-            (path.extension()? == "nsp")
-                .then_some(path.into_os_string().into_string().unwrap() + "\n")
+            let ext = path.extension()?;
+            (ext == "nsp").then_some(path.into_os_string().into_string().unwrap() + "\n")
         })
         .collect();
-    if nsp_paths.is_empty() {
+    if game_paths.is_empty() {
         bail!(
-            "No NSPs found in given directory ({})",
-            args.nsp_dir.display()
+            "No game backup files found in given directory ({})",
+            args.game_backup_dir.display()
         )
     }
-    let all_paths_string_length = nsp_paths.iter().fold(0, |acc, path| acc + path.len());
+    let all_paths_string_length = game_paths.iter().fold(0, |acc, path| acc + path.len());
 
     let device_info = list_devices()
         .wait()?
@@ -106,12 +114,12 @@ fn main() -> color_eyre::Result<()> {
     let mut ep_in = interface.endpoint::<Bulk, In>(0x81)?;
     ep_in.clear_halt().wait()?;
 
-    debug!("sending nsp list");
+    debug!("sending game backup list");
     write_usb(&mut ep_out, "TUL0")?;
     write_usb(&mut ep_out, &all_paths_string_length.to_le_bytes()[..4])?;
     write_usb(&mut ep_out, [0u8; 8])?;
-    for nsp_path in &nsp_paths {
-        write_usb(&mut ep_out, nsp_path.as_str())?;
+    for path in &game_paths {
+        write_usb(&mut ep_out, path.as_str())?;
     }
 
     let mut pb = ProgressBar::no_length().with_style(
@@ -148,7 +156,7 @@ fn main() -> color_eyre::Result<()> {
             }
             tinfoil_command_ids::FILE_RANGE => {
                 debug!("got file range command");
-                file_range_command(&mut ep_in, &mut ep_out, &mut pb, &nsp_paths)?
+                file_range_command(&mut ep_in, &mut ep_out, &mut pb, &game_paths)?
             }
             _ => bail!("invalid command ID encountered!"),
         }
@@ -161,36 +169,36 @@ fn file_range_command(
     ep_in: &mut Endpoint<Bulk, In>,
     ep_out: &mut Endpoint<Bulk, Out>,
     pb: &mut ProgressBar,
-    nsps: &[String],
+    game_paths: &[String],
 ) -> color_eyre::Result<()> {
     let file_range_header = read_usb(ep_in)?;
 
     let range_size = usize::from_le_bytes(file_range_header[..8].try_into().unwrap());
     let range_offset = u64::from_le_bytes(file_range_header[8..16].try_into().unwrap());
-    let nsp_name_len = usize::from_le_bytes(file_range_header[16..24].try_into().unwrap());
+    let game_path_len = usize::from_le_bytes(file_range_header[16..24].try_into().unwrap());
 
-    let nsp_name_buf = read_usb(ep_in)?;
-    let nsp_path = str::from_utf8(&nsp_name_buf)?;
+    let game_name_buf = read_usb(ep_in)?;
+    let game_path = str::from_utf8(&game_name_buf)?;
 
-    if !nsps
+    if !game_paths
         .iter()
-        .any(|path| path.len() == nsp_path.len() + 1 && *nsp_path == path[..nsp_path.len()])
+        .any(|path| path.len() == game_path.len() + 1 && *game_path == path[..game_path.len()])
     {
-        warn!("{:#?}", nsps);
-        warn!("requested: {:#?}", nsp_path);
-        bail!("Nintendo Switch tried to request NSP not present on host");
+        warn!("{:#?}", game_paths);
+        warn!("requested: {:#?}", game_path);
+        bail!("Nintendo Switch tried to request game backup not present on host");
     };
 
-    info!("sending {}", &nsp_path);
+    info!("sending {}", &game_path);
 
     info!(
         "Range size: {}, Range offset: {}, Name len: {}, Name: {}",
-        range_size, range_offset, nsp_name_len, nsp_path,
+        range_size, range_offset, game_path_len, game_path,
     );
 
     send_response_header(ep_out, range_size)?;
 
-    let file = File::open(nsp_path)?;
+    let file = File::open(game_path)?;
 
     if let Ok(metadata) = file.metadata() {
         pb.set_length(metadata.size());
