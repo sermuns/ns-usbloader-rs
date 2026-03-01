@@ -3,7 +3,6 @@
 use clap::Parser;
 use color_eyre::{
     Section,
-    config::Theme,
     eyre::{ContextCompat, bail, eyre},
 };
 use indicatif::{ProgressBar, ProgressStyle};
