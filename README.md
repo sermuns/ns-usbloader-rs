@@ -1,6 +1,6 @@
 # ns-usbloader-rs
 
-A proof-of-concept command line re-implementation of [NS-USBloader](https://github.com/developersu/ns-usbloader). Only NSPs are supported for now.
+A proof-of-concept command line re-implementation of [NS-USBloader](https://github.com/developersu/ns-usbloader).
 
 ## Installation
 
