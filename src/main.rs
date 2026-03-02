@@ -28,7 +28,7 @@ fn write_usb(
         .transfer_blocking(buf.into(), USB_TIMEOUT)
         .status
         .map_err(|e| match e {
-            TransferError::Cancelled => eyre!("Nintendo Switch is not accepting transfers.")
+            TransferError::Cancelled => eyre!("Nintendo Switch was discovered, but it is not accepting transfers.")
                 .suggestion("Ensure Awoo Installer is open, and in the menu 'Install Over USB'."),
             TransferError::Disconnected => eyre!("USB has disconnected"),
             TransferError::Fault | TransferError::Stall | TransferError::InvalidArgument => {
