@@ -143,7 +143,7 @@ struct Args {
 
 fn has_valid_extension(path: &Path) -> bool {
     path.extension()
-        .is_some_and(|ext| ext == "nsp" || ext == "xci")
+        .is_some_and(|ext| ext == "nsp" || ext == "xci" || ext == "nsz")
 }
 
 fn main() -> color_eyre::Result<()> {
