@@ -20,7 +20,7 @@ You have two alternatives:
    ```sh
    git clone https://github.com/sermuns/ironfoil
    cd ironfoil
-   cargo install --path .
+   cargo install --path cli/
    ```
 
 Both of these methods places `ironfoil` in `~/.cargo/bin/`, which normally should be part of your `$PATH`.
