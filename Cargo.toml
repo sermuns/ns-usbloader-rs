@@ -1,8 +1,8 @@
 [workspace]
 resolver = "3"
 members = [
-  "crates/cli",
-  "crates/core",
+  "cli",
+  "core",
 ]
 
 [workspace.package]
