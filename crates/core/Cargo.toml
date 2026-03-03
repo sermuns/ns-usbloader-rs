@@ -7,6 +7,7 @@ repository.workspace = true
 [dependencies]
 log.workspace = true
 nusb = "0.2"
-thiserror = "1"
+# thiserror = "1"
+percent-encoding = "2.3"
 color-eyre.workspace = true
 indicatif.workspace = true

@@ -8,7 +8,5 @@ repository.workspace = true
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 env_logger = "0.11"
-log.workspace = true
 ns-usbloader-rs-core = { path = "../core" }
 color-eyre.workspace = true
-indicatif.workspace = true

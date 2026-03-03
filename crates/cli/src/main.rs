@@ -1,11 +1,28 @@
-use clap::Parser;
-use ns_usbloader_rs_core::perform_tinfoil_usb_install;
-use std::path::PathBuf;
+use clap::{Parser, Subcommand};
+use ns_usbloader_rs_core::{perform_tinfoil_network_install, perform_tinfoil_usb_install};
+use std::{net::Ipv4Addr, path::PathBuf};
 
-#[derive(Parser)]
+#[derive(Debug, Parser)]
 #[command(version, about, long_about = None)]
-struct Args {
+struct Cli {
+    /// Path to a game backup file or directory containing game backup files
     game_backup_path: PathBuf,
+
+    #[command(subcommand)]
+    transfer_type: TransferType,
+}
+
+#[derive(Debug, Subcommand)]
+enum TransferType {
+    /// Transfer over USB
+    Usb,
+
+    /// Transfer over network
+    #[command(arg_required_else_help = true)]
+    Network {
+        /// The IP address of the Nintendo Switch
+        target_ip: Ipv4Addr,
+    },
 }
 
 fn main() -> color_eyre::Result<()> {
@@ -15,7 +32,12 @@ fn main() -> color_eyre::Result<()> {
         .display_location_section(cfg!(debug_assertions))
         .install()?;
 
-    let args = Args::parse();
+    let args = Cli::parse();
 
-    perform_tinfoil_usb_install(&args.game_backup_path)
+    match args.transfer_type {
+        TransferType::Usb => perform_tinfoil_usb_install(&args.game_backup_path),
+        TransferType::Network { target_ip } => {
+            perform_tinfoil_network_install(&args.game_backup_path, target_ip)
+        }
+    }
 }

@@ -48,10 +48,15 @@ Here's the output of `ns-usbloader-rs --help`:
 ```present cargo run -- -h
 CLI alternative to NS-USBloader. Transfer data to Awoo Installer.
 
-Usage: ns-usbloader-rs <GAME_BACKUP_PATH>
+Usage: ns-usbloader-rs <GAME_BACKUP_PATH> <COMMAND>
+
+Commands:
+  usb      Transfer over USB
+  network  Transfer over network
+  help     Print this message or the help of the given subcommand(s)
 
 Arguments:
-  <GAME_BACKUP_PATH>  
+  <GAME_BACKUP_PATH>  Path to a game backup file or directory containing game backup files
 
 Options:
   -h, --help     Print help
