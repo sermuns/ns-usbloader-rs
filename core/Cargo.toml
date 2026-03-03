@@ -1,5 +1,5 @@
 [package]
-name = "ns-usbloader-rs-core"
+name = "ironfoil-core"
 version.workspace = true
 edition.workspace = true
 repository.workspace = true

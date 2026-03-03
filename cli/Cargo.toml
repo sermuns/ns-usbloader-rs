@@ -1,6 +1,6 @@
 [package]
-name = "ns-usbloader-rs"
-description = "CLI alternative to NS-USBloader. Transfer data to Awoo Installer."
+name = "ironfoil"
+description = "Transfer to Awoo installer from the command-line"
 version.workspace = true
 edition.workspace = true
 repository.workspace = true
@@ -8,5 +8,5 @@ repository.workspace = true
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 env_logger = "0.11"
-ns-usbloader-rs-core = { path = "../core" }
+ironfoil-core = { path = "../core" }
 color-eyre.workspace = true

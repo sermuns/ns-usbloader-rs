@@ -294,6 +294,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "ironfoil"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "color-eyre",
+ "env_logger",
+ "ironfoil-core",
+]
+
+[[package]]
+name = "ironfoil-core"
+version = "0.1.0"
+dependencies = [
+ "color-eyre",
+ "indicatif",
+ "log",
+ "nusb",
+ "percent-encoding",
+]
+
+[[package]]
 name = "is_terminal_polyfill"
 version = "1.70.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -373,27 +394,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316"
 dependencies = [
  "adler2",
-]
-
-[[package]]
-name = "ns-usbloader-rs"
-version = "0.1.0"
-dependencies = [
- "clap",
- "color-eyre",
- "env_logger",
- "ns-usbloader-rs-core",
-]
-
-[[package]]
-name = "ns-usbloader-rs-core"
-version = "0.1.0"
-dependencies = [
- "color-eyre",
- "indicatif",
- "log",
- "nusb",
- "percent-encoding",
 ]
 
 [[package]]

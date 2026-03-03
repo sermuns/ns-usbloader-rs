@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use ns_usbloader_rs_core::{perform_tinfoil_network_install, perform_tinfoil_usb_install};
+use ironfoil_core::{perform_tinfoil_network_install, perform_tinfoil_usb_install};
 use std::{net::Ipv4Addr, path::PathBuf};
 
 #[derive(Debug, Parser)]
