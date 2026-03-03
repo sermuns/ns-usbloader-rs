@@ -29,22 +29,6 @@ Both of these methods places `ns-usbloader-rs` in `~/.cargo/bin/`, which normall
 
 ## Usage
 
-1. On the Nintendo Switch, open Awoo Installer and select 'Install over USB'.
-
-2. On your PC, in a shell, run `ns-usbloader-rs <GAME_BACKUP_PATH>` where `<GAME_BACKUP_PATH>` either is the path to a directory containing the game backups or a specific game backup file.
-
-   > For example
-   >
-   > ```sh
-   > ns-usbloader-rs ~/Documents/NS_backups/
-   > ```
-
-3. On the Nintendo Switch, select which game(s) you want, then start installation.
-
-4. .. profit?
-
-Here's the output of `ns-usbloader-rs --help`:
-
 ```present cargo run -- -h
 CLI alternative to NS-USBloader. Transfer data to Awoo Installer.
 
