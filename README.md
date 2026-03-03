@@ -57,3 +57,7 @@ Options:
   -h, --help     Print help
   -V, --version  Print version
 ```
+
+## License
+
+Dual-licensed under [Apache 2.0](./LICENSE-APACHE) or [MIT](./LICENSE-MIT).
