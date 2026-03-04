@@ -5,8 +5,10 @@
 ### ⚙️ Miscellaneous Tasks
 
 - revamp how releasing is done by @sermuns in [b56dae8](https://github.com/sermuns/ironfoil/commit/b56dae8102496dad6068069c732f72e1bf00ae93)
-- add Dockerfile, but remove workflow for now by Samuel Åkesson in [87da659](https://github.com/sermuns/ironfoil/commit/87da659dee16a30b0be211a6b44b96dde620cc1e)
-- use correct token by Samuel Åkesson in [3b0d887](https://github.com/sermuns/ironfoil/commit/3b0d8879a919d9f112daa9f4edd65c3c2a932550)
+- add Dockerfile, but remove workflow for now by @sermuns in [87da659](https://github.com/sermuns/ironfoil/commit/87da659dee16a30b0be211a6b44b96dde620cc1e)
+- use correct token by @sermuns in [4887c2b](https://github.com/sermuns/ironfoil/commit/4887c2b34b29280531544351b2f823f438d77b54)
+- add write permission to workflow by Samuel Åkesson in [2047fa8](https://github.com/sermuns/ironfoil/commit/2047fa8d4def2f570d7166e1f558aa5961f9e41a)
+- release v0.1.3 by Samuel Åkesson in [a497907](https://github.com/sermuns/ironfoil/commit/a49790791da6ddaaa225fdbdb737a4319f378484)
 ## [v0.1.2](https://github.com/sermuns/ironfoil/compare/ironfoil-v0.1.1..v0.1.2) - 2026-03-04
 
 ### ⚙️ Miscellaneous Tasks
