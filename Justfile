@@ -6,4 +6,4 @@ release:
 	git cliff -o CHANGELOG.md --tag $VERSION
 	git add CHANGELOG.md
 	git commit --amend --no-edit
-	git tag -v v$VERSION
+	git tag v$VERSION -f

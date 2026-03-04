@@ -155,7 +155,7 @@ jobs:
           tag: ${{ github.ref }}
           release_name: "Release v${{ env.RELEASE_VERSION }}"
           body: ${{ steps.git-cliff.outputs.content }}
-          repo_token: ${{ secrets.RELEASE_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-crates-io:
     name: Publish on crates.io
