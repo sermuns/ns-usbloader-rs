@@ -1,5 +1,10 @@
 # Changelog
 
+## [ironfoil-v0.1.1](https://github.com/sermuns/ironfoil/compare/ironfoil-v0.1.0..ironfoil-v0.1.1) - 2026-03-04
+
+### ⚙️ Miscellaneous Tasks
+
+- Release by @sermuns in [f68bb00](https://github.com/sermuns/ironfoil/commit/f68bb00308636f51db27abbe8b765ba926af28dd)
 ## [ironfoil-v0.1.0] - 2026-03-04
 
 ### 🐛 Bug Fixes

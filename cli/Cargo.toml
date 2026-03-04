@@ -9,5 +9,5 @@ repository.workspace = true
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 env_logger = "0.11"
-ironfoil-core = { path = "../core", version = "0.1.1" }
+ironfoil-core = { path = "../core", version = "0.1.2" }
 color-eyre.workspace = true
