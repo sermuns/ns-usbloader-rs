@@ -1,2 +1,6 @@
 pre-release-hook = ["git", "cliff", "-o", "CHANGELOG.md", "--tag", "{{version}}" ]
 publish = false
+
+tag = true
+tag-message = "chore: release v{{version}}"
+tag-name = "v{{version}}"
