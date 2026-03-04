@@ -6,15 +6,32 @@ A tiny command-line tool to transfer to [Awoo installer](https://github.com/Hunt
 
 ## Installation
 
-As of now, installation from source is the only options.
+### Binary releases
 
-You have two alternatives:
+Alternatives:
 
-1. Install using cargo
+1. Manually download [latest release](https://github.com/sermuns/meread/releases/latest) and extract the tool to a location that is in your `$PATH`.
+
+2. Use [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall):
+   ```sh
+   cargo binstall ironfoil
+   ```
+
+### From source
+
+Alternatives:
+
+1. Install latest release using cargo
 
    ```sh
-   cargo install --git https://github.com/sermuns/ironfoil
+   cargo install ironfoil
    ```
+
+2. Install latest git version using cargo:
+
+    ```sh
+    cargo install --git https://github.com/sermuns/ironfoil
+    ```
 
 2. Manually clone then install
    ```sh
