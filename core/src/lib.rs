@@ -17,7 +17,6 @@ use std::{
     fs::File,
     io::{BufRead, BufReader, Read, Seek, SeekFrom, Write},
     net::{IpAddr, Ipv4Addr, TcpListener, TcpStream},
-    os::unix::fs::MetadataExt,
     path::Path,
     time::Duration,
 };
@@ -138,7 +137,7 @@ fn serve_http(
 
         let game_size = std::fs::metadata(requested_game_path.as_ref())
             .unwrap()
-            .size();
+            .len();
 
         match method {
             "GET" => {
@@ -404,7 +403,7 @@ fn file_range_command(
     let file = File::open(game_path)?;
 
     if let Ok(metadata) = file.metadata() {
-        pb.set_length(metadata.size());
+        pb.set_length(metadata.len());
     }
 
     let mut reader = BufReader::new(file);
