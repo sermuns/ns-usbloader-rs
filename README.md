@@ -1,4 +1,8 @@
-# ironfoil
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="media/banner-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="media/banner-light.svg">
+  <img alt="ironfoil logo" src="media/banner-light.svg">
+</picture>
 
 A tiny command-line tool to transfer to [Awoo installer](https://github.com/Huntereb/Awoo-Installer).
 
