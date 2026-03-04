@@ -28,7 +28,7 @@ Both of these methods places `ironfoil` in `~/.cargo/bin/`, which normally shoul
 ## Usage
 
 ```present cargo run -- -h
-CLI alternative to NS-USBloader. Transfer data to Awoo Installer.
+Transfer to Awoo installer from the command-line
 
 Usage: ironfoil <GAME_BACKUP_PATH> <COMMAND>
 
