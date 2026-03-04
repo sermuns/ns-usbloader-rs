@@ -4,7 +4,7 @@
   width: auto,
   height: auto,
   margin: 50pt,
-  fill: white,
+  fill: none,
 )
 
 #set align(center + horizon)
