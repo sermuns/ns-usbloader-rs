@@ -105,7 +105,7 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.build.TARGET }}
 
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
