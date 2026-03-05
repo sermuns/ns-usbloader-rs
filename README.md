@@ -4,7 +4,7 @@
   <img alt="ironfoil logo" src="media/banner-light.svg">
 </picture>
 
-A tiny command-line tool to transfer to [Awoo installer](https://github.com/Huntereb/Awoo-Installer).
+A tiny command-line tool to transfer to [Awoo installer](https://github.com/Huntereb/Awoo-Installer), [CyberFoil](https://github.com/luketanti/CyberFoil) and probably more Nintendo Switch title installers which are based on the "Tinfoil" protocol.
 
 ![demo gif](media/demo.gif)
 
@@ -33,11 +33,11 @@ Alternatives:
 
 2. Install latest git version using cargo:
 
-    ```sh
-    cargo install --git https://github.com/sermuns/ironfoil
-    ```
+   ```sh
+   cargo install --git https://github.com/sermuns/ironfoil
+   ```
 
-2. Manually clone then install
+3. Manually clone then install
    ```sh
    git clone https://github.com/sermuns/ironfoil
    cd ironfoil
