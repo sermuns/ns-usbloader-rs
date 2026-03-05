@@ -135,8 +135,8 @@ fn serve_http(
 // TODO: maybe keep persistent BufReader of game file contents
 pub fn perform_tinfoil_network_install(
     game_backup_path: &Path,
-    target_ip: Ipv4Addr,
     recurse: bool,
+    target_ip: Ipv4Addr,
 ) -> color_eyre::Result<()> {
     let game_paths = read_game_paths(game_backup_path, recurse)?;
     println!("Performing network install to {}", target_ip);
