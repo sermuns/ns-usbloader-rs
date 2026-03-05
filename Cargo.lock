@@ -295,7 +295,7 @@ dependencies = [
 
 [[package]]
 name = "ironfoil"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "clap",
  "color-eyre",
@@ -305,7 +305,7 @@ dependencies = [
 
 [[package]]
 name = "ironfoil-core"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "color-eyre",
  "indicatif",

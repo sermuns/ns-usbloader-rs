@@ -1,6 +1,19 @@
 # Changelog
 
-## [0.1.4](https://github.com/sermuns/ironfoil/compare/v0.1.3..0.1.4) - 2026-03-04
+## [0.1.5](https://github.com/sermuns/ironfoil/compare/v0.1.4..0.1.5) - 2026-03-05
+
+### 🚀 Features
+
+- smaller binaries by @sermuns in [d2f1756](https://github.com/sermuns/ironfoil/commit/d2f1756091415f131e09c23e64fffb0b0b054153)
+
+### 🚜 Refactor
+
+- split lib into multiple modules by @sermuns in [e9e5ec4](https://github.com/sermuns/ironfoil/commit/e9e5ec4636426b7501b038c5b5386f4f14f23789)
+
+### ⚙️ Miscellaneous Tasks
+
+- release v0.1.5 by Samuel Åkesson in [050a256](https://github.com/sermuns/ironfoil/commit/050a2565c1b6595593d85dc4640ccd2d38ad2be6)
+## [v0.1.4](https://github.com/sermuns/ironfoil/compare/v0.1.3..v0.1.4) - 2026-03-04
 
 ### 🚀 Features
 
@@ -17,7 +30,7 @@
 - add logo to README by @sermuns in [bdf2305](https://github.com/sermuns/ironfoil/commit/bdf2305a24c515578233dc7ef739f67846e75ff8)
 - update logo, hardcode text paths by @sermuns in [d96dcd0](https://github.com/sermuns/ironfoil/commit/d96dcd0c7a2dc5741d0f09eb72f9818004b075bc)
 - make banner transparent by @sermuns in [d888462](https://github.com/sermuns/ironfoil/commit/d8884621eec61227fa1aabc2c4b87ce286548365)
-- release v0.1.4 by Samuel Åkesson in [181e7fc](https://github.com/sermuns/ironfoil/commit/181e7fccacc7a0306b8a9b4ee23f22e96205998b)
+- release v0.1.4 by @sermuns in [41692f1](https://github.com/sermuns/ironfoil/commit/41692f1d6fb5c52b67e300891b827e2adf558eb1)
 ## [v0.1.3](https://github.com/sermuns/ironfoil/compare/v0.1.2..v0.1.3) - 2026-03-04
 
 ### ⚙️ Miscellaneous Tasks
