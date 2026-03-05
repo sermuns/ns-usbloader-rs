@@ -1,14 +1,18 @@
 # Changelog
 
-## [0.2.0](https://github.com/sermuns/ironfoil/compare/v0.1.5..0.2.0) - 2026-03-05
+## [0.1.6](https://github.com/sermuns/ironfoil/compare/v0.1.5..0.1.6) - 2026-03-05
 
 ### 🚀 Features
 
-- **breaking** add RCM payload injection by Samuel Åkesson in [ebb506b](https://github.com/sermuns/ironfoil/commit/ebb506bc6ae302a7dc606c6766b04179d076c0d4)
+- add RCM payload injection by @sermuns in [b5f0ef1](https://github.com/sermuns/ironfoil/commit/b5f0ef1cce28c5ecac7aac47cd6097dbc8d3db8a)
 
 ### 🐛 Bug Fixes
 
-- **(ci)** more robust RELEASE_VERSION parsing and release notes handling by Samuel Åkesson in [d9e35d9](https://github.com/sermuns/ironfoil/commit/d9e35d9e3e6dc007b6f47c1d91a136f9d9a62bf0)
+- **(ci)** more robust RELEASE_VERSION parsing and release notes handling by @sermuns in [a33f2df](https://github.com/sermuns/ironfoil/commit/a33f2dfb0e3e1e3988e5761a3305d38209edf1ee)
+
+### ⚙️ Miscellaneous Tasks
+
+- release v0.1.6 by Samuel Åkesson in [4cd242d](https://github.com/sermuns/ironfoil/commit/4cd242d19f54315b7bee9f1ca1d6a0b84a2caadb)
 ## [v0.1.5](https://github.com/sermuns/ironfoil/compare/v0.1.4..v0.1.5) - 2026-03-05
 
 ### 🚀 Features
