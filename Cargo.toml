@@ -18,3 +18,11 @@ indicatif = "0.18"
 
 [profile.dev.package.backtrace]
 opt-level = 3
+
+[profile.release]
+opt-level = 3
+debug = false
+panic = "unwind"
+lto = true
+codegen-units = 1
+strip = true
