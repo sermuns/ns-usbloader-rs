@@ -16,9 +16,6 @@ log = "0.4"
 color-eyre = { version = "0.6", default-features = false, features = ["track-caller"] }
 indicatif = "0.18"
 
-[profile.dev.package.backtrace]
-opt-level = 3
-
 [profile.release]
 opt-level = 3
 debug = false
