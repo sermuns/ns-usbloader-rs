@@ -136,14 +136,28 @@ pub fn perform_tinfoil_usb_install(
         device_info.device_address()
     );
 
-    let device = device_info.open().wait()?;
+    let device = device_info
+        .open()
+        .wait()
+        .map_err(|e| match (e.kind(), e.os_error()) {
+            (nusb::ErrorKind::PermissionDenied, _) | (nusb::ErrorKind::Other, Some(13)) => {
+                eyre!("Permission denied opening USB connection to Nintendo Switch")
+                    .with_suggestion(|| {
+                        format!(
+                            "Ensure you have read-write permissions for bus {} at address {}",
+                            device_info.bus_id(),
+                            device_info.device_address(),
+                        )
+                    })
+            }
+            _ => eyre!("Failed to open USB connection to Nintendo Switch: {:?}", e),
+        })?;
     let interface = device.claim_interface(0).wait()?;
     let mut ep_out = interface.endpoint::<Bulk, Out>(0x01)?;
     ep_out.clear_halt().wait()?;
     let mut ep_in = interface.endpoint::<Bulk, In>(0x81)?;
     ep_in.clear_halt().wait()?;
 
-    debug!("sending game backup list");
     write_usb(&mut ep_out, "TUL0")?;
     write_usb(
         &mut ep_out,
@@ -153,6 +167,8 @@ pub fn perform_tinfoil_usb_install(
     for path in &game_paths {
         write_usb(&mut ep_out, [path.as_str(), "\n"].concat())?;
     }
+
+    eprintln!("Successfully sent list of games to Nintendo Switch, waiting for commands...");
 
     let mut pb = ProgressBar::no_length().with_style(
         ProgressStyle::with_template("ETA: {eta} ({binary_bytes_per_sec}) {wide_bar} {binary_bytes} of {binary_total_bytes} sent").unwrap(),
