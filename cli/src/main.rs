@@ -3,7 +3,11 @@ use indicatif::{ProgressBar, ProgressStyle};
 use ironfoil_core::{
     perform_tinfoil_network_install, perform_tinfoil_usb_install, send_rcm_payload,
 };
-use std::{net::Ipv4Addr, path::PathBuf, sync::mpsc};
+use std::{
+    net::Ipv4Addr,
+    path::PathBuf,
+    sync::{Arc, atomic::AtomicBool, mpsc},
+};
 
 #[derive(Debug, Parser)]
 #[command(version, about, long_about = None)]
@@ -78,6 +82,7 @@ fn main() -> color_eyre::Result<()> {
                     transfer_args.recurse,
                     progress_len_tx,
                     progress_tx,
+                    None,
                 )
             });
 
@@ -109,6 +114,7 @@ fn main() -> color_eyre::Result<()> {
                     target_ip,
                     progress_len_tx,
                     progress_tx,
+                    None,
                 )
             });
 

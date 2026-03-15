@@ -147,8 +147,9 @@ pub fn perform_tinfoil_network_install(
     target_ip: Ipv4Addr,
     progress_len_tx: mpsc::Sender<u64>,
     progress_tx: mpsc::Sender<u64>,
+    cancel: impl Into<Option<Arc<AtomicBool>>>,
 ) -> color_eyre::Result<()> {
-    let game_paths = read_game_paths(game_backup_path, recurse)?;
+    let game_paths = read_game_paths(game_backup_path, recurse, cancel.into().as_deref())?;
     println!("Performing network install to {}", target_ip);
 
     let mut keepalive_stream = TcpStream::connect((target_ip, 2000)).wrap_err_with(|| format!("Target device at {target_ip} (hopefully Nintendo Switch!?) is refusing connections"))
