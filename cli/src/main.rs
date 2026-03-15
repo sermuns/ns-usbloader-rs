@@ -76,16 +76,13 @@ fn main() -> color_eyre::Result<()> {
             let (progress_len_tx, progress_len_rx) = mpsc::channel::<u64>();
             let (progress_tx, progress_rx) = mpsc::channel::<u64>();
 
-            // not used.... kinda shitty
-            let cancel = Arc::new(AtomicBool::new(false));
-
             let usb_install_thread = std::thread::spawn(move || {
                 perform_tinfoil_usb_install(
                     &transfer_args.game_backup_path,
                     transfer_args.recurse,
                     progress_len_tx,
                     progress_tx,
-                    cancel,
+                    None,
                 )
             });
 
@@ -117,6 +114,7 @@ fn main() -> color_eyre::Result<()> {
                     target_ip,
                     progress_len_tx,
                     progress_tx,
+                    None,
                 )
             });
 

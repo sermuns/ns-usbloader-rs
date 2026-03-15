@@ -2,11 +2,19 @@ use egui::{
     Align2, Button, ProgressBar, RichText, TextWrapMode,
     Theme::{Dark, Light},
 };
-use egui_toast::{Toast, ToastKind, Toasts};
+use egui_toast::{Toast, ToastKind, ToastOptions, Toasts};
 use ironfoil_core::{GAME_BACKUP_EXTENSIONS, perform_tinfoil_usb_install};
 use log::{error, info};
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, sync::mpsc, thread::JoinHandle};
+use std::{
+    path::PathBuf,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+        mpsc,
+    },
+    thread::JoinHandle,
+};
 use strum::{EnumIter, IntoEnumIterator};
 
 #[derive(Debug)]
@@ -16,15 +24,10 @@ struct OngoingInstallation {
     last_progress_len: u64,
     last_progress: u64,
     thread: JoinHandle<color_eyre::Result<()>>,
+    cancel: Arc<AtomicBool>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(default)]
-pub struct App {
-    tab: Tab,
-}
-
-#[derive(Serialize, Deserialize, Debug, EnumIter)]
+#[derive(Serialize, Deserialize, EnumIter)]
 enum Tab {
     Home,
     Usb {
@@ -34,21 +37,43 @@ enum Tab {
     },
     Network,
     Rcm,
+    Log,
 }
 
 fn start_usb_install(game_backup_path: PathBuf, recurse: bool) -> OngoingInstallation {
     let (progress_len_tx, progress_len_rx) = mpsc::channel::<u64>();
     let (progress_tx, progress_rx) = mpsc::channel::<u64>();
 
+    let cancel = Arc::new(AtomicBool::new(false));
+    let cancel_thread = cancel.clone();
+
     OngoingInstallation {
         progress_len_rx,
         progress_rx,
         thread: std::thread::spawn(move || {
-            perform_tinfoil_usb_install(&game_backup_path, recurse, progress_len_tx, progress_tx)
+            perform_tinfoil_usb_install(
+                &game_backup_path,
+                recurse,
+                progress_len_tx,
+                progress_tx,
+                cancel_thread,
+            )
         }),
         last_progress: 0,
         last_progress_len: 1,
+        cancel,
     }
+}
+
+fn add_toast(toasts: &mut Toasts, kind: ToastKind, text: impl Into<egui::WidgetText>) {
+    toasts.add(Toast {
+        kind,
+        text: text.into(),
+        options: ToastOptions::default(),
+        // .duration_in_seconds(10.)
+        // .show_progress(true),
+        ..Default::default()
+    });
 }
 
 impl Tab {
@@ -58,6 +83,7 @@ impl Tab {
             Tab::Usb { .. } => "🔌 USB",
             Tab::Network => "🌐 Network",
             Tab::Rcm => "📎 RCM",
+            Tab::Log => "📜 Log",
         }
     }
 
@@ -77,8 +103,9 @@ impl Tab {
                 recurse,
                 maybe_ongoing_installation,
             } => {
-                ui.label("Install a game backup from your computer to your Switch using the Tinfoil USB transfer protocol.");
+                ui.label("Install a game backup from your computer to your Nintendo Switch using the Tinfoil USB transfer protocol.");
                 ui.label("You can either pick a single backup file or a directory containing multiple backups.");
+                ui.label("Check 'Recurse?' if you also want to recursively discover game backups from subdirectories of that directory.");
                 if ui.button("Pick file").clicked()
                     && let Some(game_backup_path) = rfd::FileDialog::new()
                         .add_filter("*", &GAME_BACKUP_EXTENSIONS)
@@ -115,7 +142,13 @@ impl Tab {
                         ongoing_installation.last_progress_len,
                         progress * 100.
                     );
-                    ui.add(ProgressBar::new(progress));
+                    ui.horizontal(|ui| {
+                        ui.add(ProgressBar::new(progress));
+                    });
+
+                    if ui.button("Cancel").clicked() {
+                        ongoing_installation.cancel.store(true, Ordering::Relaxed);
+                    }
 
                     // thread is finished? take it!
                     if ongoing_installation.thread.is_finished() {
@@ -125,49 +158,70 @@ impl Tab {
                             .take()
                             .expect("there is an ongoing installation");
 
-                        let toast = match ongoing_installation.thread.join() {
+                        if ongoing_installation.cancel.load(Ordering::Relaxed) {
+                            info!("installation was cancelled");
+                            add_toast(toasts, ToastKind::Info, "Installation cancelled.");
+                            return;
+                        }
+
+                        match ongoing_installation.thread.join() {
                             Ok(Ok(_)) => {
                                 info!("installation thread finished with success");
-                                Toast {
-                                    kind: ToastKind::Success,
-                                    text: "Installation completed successfully!".into(),
-                                    ..Default::default()
-                                }
+                                add_toast(
+                                    toasts,
+                                    ToastKind::Success,
+                                    "Installation completed successfully!",
+                                );
                             }
                             Ok(Err(e)) => {
                                 error!("installation thread finished with error:\n{:?}", e);
-                                Toast {
-                                    kind: ToastKind::Error,
-                                    text: format!("Installation failed:\n{}", e).into(),
-                                    ..Default::default()
-                                }
+                                add_toast(
+                                    toasts,
+                                    ToastKind::Error,
+                                    format!("Installation failed:\n{}", e),
+                                );
                             }
                             Err(e) => {
                                 error!("installation thread panicked:\n{:?}", e);
-                                Toast {
-                                    kind: ToastKind::Error,
-                                    text: format!("Installation crashed:\n{:?}", e).into(),
-                                    ..Default::default()
-                                }
+                                add_toast(
+                                    toasts,
+                                    ToastKind::Error,
+                                    format!("Installation crashed:\n{:?}", e),
+                                );
                             }
                         };
-                        toasts.add(toast);
                     }
                 }
             }
             Tab::Network => {
-                // ui.label("Network tab content goes here.");
+                ui.label("UNIMPLEMENTED!");
             }
             Tab::Rcm => {
-                // ui.label("RCM tab content goes here.");
+                ui.label("UNIMPLEMENTED!");
+            }
+            Tab::Log => {
+                ui.label("UNIMPLEMENTED!");
             }
         }
     }
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(default)]
+pub struct App {
+    tab: Tab,
+    #[serde(skip)]
+    toasts: Toasts,
+}
+
 impl Default for App {
     fn default() -> Self {
-        Self { tab: Tab::Home }
+        Self {
+            tab: Tab::Home,
+            toasts: Toasts::new()
+                .anchor(Align2::CENTER_CENTER, egui::Pos2::ZERO)
+                .direction(egui::Direction::BottomUp),
+        }
     }
 }
 
@@ -176,9 +230,8 @@ impl App {
         egui_extras::install_image_loaders(&cc.egui_ctx);
 
         if let Some(storage) = cc.storage {
-            let stored = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-            info!("read from stored! {:?}", &stored);
-            stored
+            info!("read from stored");
+            eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
         } else {
             info!("no stored");
             Default::default()
@@ -222,10 +275,6 @@ impl eframe::App for App {
             });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let mut toasts = Toasts::new()
-                .anchor(Align2::RIGHT_BOTTOM, (-16., -16.))
-                .direction(egui::Direction::BottomUp);
-
             ui.horizontal(|ui| {
                 ui.heading(env!("CARGO_PKG_NAME"));
                 // if !matches!(self.tab, Tab::Home) {
@@ -236,7 +285,7 @@ impl eframe::App for App {
             ui.spacing_mut().item_spacing.y = 8.;
             ui.separator();
 
-            self.tab.show(ui, &ctx.theme(), &mut toasts);
+            self.tab.show(ui, &ctx.theme(), &mut self.toasts);
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::RIGHT), |ui| {
                 ui.horizontal(|ui| {
@@ -248,12 +297,13 @@ impl eframe::App for App {
                 });
                 ui.separator();
             });
-            toasts.show(ctx);
+
+            self.toasts.show(ctx);
         });
+        ctx.request_repaint(); // FIXME: unneccessaryily continous.
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        info!("saving app state: {:?}", self);
         eframe::set_value(storage, eframe::APP_KEY, self);
     }
 }
