@@ -1,13 +1,11 @@
 use color_eyre::eyre::ContextCompat;
-use color_eyre::{
-    Section,
-    eyre::{bail, eyre},
-};
+use color_eyre::eyre::{bail, eyre};
 use log::{debug, error, info};
 use nusb::{
     Endpoint, MaybeFuture, list_devices,
     transfer::{Buffer, Bulk, In, Out, TransferError},
 };
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::{
     fs::File,
@@ -120,6 +118,7 @@ pub fn perform_tinfoil_usb_install(
     recurse: bool,
     progress_len_tx: mpsc::Sender<u64>,
     progress_tx: mpsc::Sender<u64>,
+    cancel: impl AsRef<AtomicBool>,
 ) -> color_eyre::Result<()> {
     let game_paths = read_game_paths(game_backup_path, recurse)?;
     let paths_with_newlines_string_length: usize =
@@ -128,9 +127,12 @@ pub fn perform_tinfoil_usb_install(
     let device_info = list_devices()
         .wait()?
         .find(|dev| dev.vendor_id() == 0x57e && dev.product_id() == 0x3000)
-        .wrap_err("Unable to discover Nintendo Switch through USB.")
-        .suggestion(
-            "Ensure the Nintendo Switch is awake and connected via cable to this computer.",
+        .wrap_err(
+            [
+                "Unable to discover Nintendo Switch through USB.",
+                "Ensure the Nintendo Switch is awake and connected via cable to this computer.",
+            ]
+            .join("\n"),
         )?;
 
     info!(
@@ -144,14 +146,11 @@ pub fn perform_tinfoil_usb_install(
         .wait()
         .map_err(|e| match (e.kind(), e.os_error()) {
             (nusb::ErrorKind::PermissionDenied, _) | (nusb::ErrorKind::Other, Some(13)) => {
-                eyre!("Permission denied opening USB connection to Nintendo Switch")
-                    .with_suggestion(|| {
-                        format!(
-                            "Ensure you have read-write permissions for bus {} at address {}",
-                            device_info.bus_id(),
-                            device_info.device_address(),
-                        )
-                    })
+                eyre!(
+                    "Permission denied opening USB connection to Nintendo Switch\nEnsure you have read-write permissions for bus {} at address {}",
+                    device_info.bus_id(),
+                    device_info.device_address(),
+                )
             }
             _ => eyre!("Failed to open USB connection to Nintendo Switch: {:?}", e),
         })?;
@@ -174,6 +173,10 @@ pub fn perform_tinfoil_usb_install(
     eprintln!("Successfully sent list of games to Nintendo Switch, waiting for commands...");
 
     loop {
+        if cancel.as_ref().load(Ordering::Relaxed) {
+            debug!("cancellation requested, exiting...");
+            break;
+        }
         debug!("waiting for header...");
         let command_header = ep_in
             .transfer_blocking(Buffer::new(512), Duration::MAX)
@@ -226,10 +229,13 @@ fn write_usb(
         .status
         .map_err(|e| match e {
             TransferError::Cancelled => {
-                eyre!("Nintendo Switch was discovered, but it is not accepting transfers.")
-                    .suggestion(
-                        "Ensure Awoo Installer is open, and in the menu 'Install Over USB'.",
-                    )
+                eyre!(
+                    [
+                        "Nintendo Switch was discovered, but it is not accepting transfers.",
+                        "Ensure Awoo Installer is open, and in the menu 'Install Over USB'."
+                    ]
+                    .join("\n")
+                )
             }
             TransferError::Disconnected => eyre!("USB has disconnected"),
             TransferError::Fault | TransferError::Stall | TransferError::InvalidArgument => {
