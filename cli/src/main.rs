@@ -1,8 +1,6 @@
 use clap::{Args, Parser, Subcommand};
 use indicatif::{ProgressBar, ProgressStyle};
-use ironfoil_core::{
-    perform_tinfoil_network_install, perform_tinfoil_usb_install, send_rcm_payload,
-};
+use ironfoil_core::{perform_tinfoil_network_install, perform_usb_install, send_rcm_payload};
 use std::{
     net::Ipv4Addr,
     path::PathBuf,
@@ -33,6 +31,10 @@ enum TransferType {
     Usb {
         #[command(flatten)]
         transfer_args: TransferArgs,
+
+        /// If transferring to Sphaira homebrew menu
+        #[arg(long = "sphaira")]
+        for_sphaira: bool,
     },
 
     /// Transfer over network
@@ -71,17 +73,21 @@ fn main() -> color_eyre::Result<()> {
     // TODO: deduplicate, generalise Usb and Network transfer code here...
     // maybe create a generic functin that accepts any transfer function?
     match args.transfer_type {
-        TransferType::Usb { transfer_args } => {
+        TransferType::Usb {
+            transfer_args,
+            for_sphaira,
+        } => {
             let pb = create_progress_bar();
             let (progress_len_tx, progress_len_rx) = mpsc::channel::<u64>();
             let (progress_tx, progress_rx) = mpsc::channel::<u64>();
 
             let usb_install_thread = std::thread::spawn(move || {
-                perform_tinfoil_usb_install(
+                perform_usb_install(
                     &transfer_args.game_backup_path,
                     transfer_args.recurse,
                     progress_len_tx,
                     progress_tx,
+                    for_sphaira,
                     None,
                 )
             });

@@ -14,7 +14,7 @@ repository = "https://github.com/sermuns/ironfoil"
 
 [workspace.dependencies]
 log = "0.4"
-color-eyre = { version = "0.6", default-features = false, features = ["track-caller"] }
+color-eyre = "0.6"
 env_logger = "0.11"
 
 [profile.release]
