@@ -1,9 +1,9 @@
 use egui::{
-    Align2, Button, ProgressBar, RichText, TextWrapMode,
-    Theme::{Dark, Light},
+    Align2, Button, Color32, ProgressBar, RichText, TextWrapMode,
+    Theme::{self, Dark, Light},
 };
 use egui_toast::{Toast, ToastKind, ToastOptions, Toasts};
-use ironfoil_core::{GAME_BACKUP_EXTENSIONS, perform_tinfoil_usb_install};
+use ironfoil_core::{GAME_BACKUP_EXTENSIONS, perform_usb_install};
 use log::{error, info};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -32,6 +32,7 @@ enum Tab {
     Home,
     Usb {
         recurse: bool,
+        for_sphaira: bool,
         #[serde(skip)]
         maybe_ongoing_installation: Option<OngoingInstallation>,
     },
@@ -40,7 +41,11 @@ enum Tab {
     Log,
 }
 
-fn start_usb_install(game_backup_path: PathBuf, recurse: bool) -> OngoingInstallation {
+fn start_usb_install(
+    game_backup_path: PathBuf,
+    recurse: bool,
+    for_sphaira: bool,
+) -> OngoingInstallation {
     let (progress_len_tx, progress_len_rx) = mpsc::channel::<u64>();
     let (progress_tx, progress_rx) = mpsc::channel::<u64>();
 
@@ -51,11 +56,12 @@ fn start_usb_install(game_backup_path: PathBuf, recurse: bool) -> OngoingInstall
         progress_len_rx,
         progress_rx,
         thread: std::thread::spawn(move || {
-            perform_tinfoil_usb_install(
+            perform_usb_install(
                 &game_backup_path,
                 recurse,
                 progress_len_tx,
                 progress_tx,
+                for_sphaira,
                 cancel_thread,
             )
         }),
@@ -101,28 +107,31 @@ impl Tab {
             }
             Tab::Usb {
                 recurse,
+                for_sphaira,
                 maybe_ongoing_installation,
             } => {
                 ui.label("Install a game backup from your computer to your Nintendo Switch using the Tinfoil USB transfer protocol.");
                 ui.label("You can either pick a single backup file or a directory containing multiple backups.");
                 ui.label("Check 'Recurse?' if you also want to recursively discover game backups from subdirectories of that directory.");
-                if ui.button("Pick file").clicked()
-                    && let Some(game_backup_path) = rfd::FileDialog::new()
-                        .add_filter("*", &GAME_BACKUP_EXTENSIONS)
-                        .pick_file()
-                {
-                    *maybe_ongoing_installation =
-                        Some(start_usb_install(game_backup_path, *recurse));
-                }
 
                 ui.horizontal(|ui| {
+                    if ui.button("Pick file").clicked()
+                        && let Some(game_backup_path) = rfd::FileDialog::new()
+                            .add_filter("*", &GAME_BACKUP_EXTENSIONS)
+                            .pick_file()
+                    {
+                        *maybe_ongoing_installation =
+                            Some(start_usb_install(game_backup_path, *recurse, *for_sphaira));
+                    }
+                    ui.add_space(8.);
                     if ui.button("Pick directory").clicked()
                         && let Some(game_backup_path) = rfd::FileDialog::new().pick_folder()
                     {
                         *maybe_ongoing_installation =
-                            Some(start_usb_install(game_backup_path, *recurse));
+                            Some(start_usb_install(game_backup_path, *recurse, *for_sphaira));
                     }
                     ui.checkbox(recurse, "Recurse?");
+                    ui.checkbox(for_sphaira, "For Sphaira homebrew menu?");
                 });
 
                 if let Some(ongoing_installation) = maybe_ongoing_installation {
@@ -193,14 +202,8 @@ impl Tab {
                     }
                 }
             }
-            Tab::Network => {
-                ui.label("UNIMPLEMENTED!");
-            }
-            Tab::Rcm => {
-                ui.label("UNIMPLEMENTED!");
-            }
-            Tab::Log => {
-                ui.label("UNIMPLEMENTED!");
+            Tab::Network | Tab::Rcm | Tab::Log => {
+                ui.label("UNIMPLEMENTED here! Use the command-line tool for now...");
             }
         }
     }
@@ -228,6 +231,13 @@ impl Default for App {
 impl App {
     pub fn new(cc: &eframe::CreationContext) -> Self {
         egui_extras::install_image_loaders(&cc.egui_ctx);
+
+        cc.egui_ctx.style_mut_of(Theme::Light, |style| {
+            style.visuals.widgets.noninteractive.fg_stroke.color = Color32::BLACK;
+        });
+        cc.egui_ctx.style_mut_of(Theme::Dark, |style| {
+            style.visuals.widgets.noninteractive.fg_stroke.color = Color32::WHITE;
+        });
 
         if let Some(storage) = cc.storage {
             info!("read from stored");
