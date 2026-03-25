@@ -555,7 +555,7 @@ fn write_usb(
                 eyre!(
                     [
                         "Nintendo Switch was discovered, but it is not accepting transfers.",
-                        "Ensure Awoo Installer is open, and in the menu 'Install Over USB'."
+                        "Ensure you are in the USB install menu."
                     ]
                     .join("\n")
                 )
