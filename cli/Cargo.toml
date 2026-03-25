@@ -1,6 +1,6 @@
 [package]
 name = "ironfoil"
-description = "Transfer to Awoo installer from the command-line"
+description = "Transfer to NS title installers from the command-line"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

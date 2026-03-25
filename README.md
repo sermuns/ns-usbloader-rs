@@ -4,9 +4,20 @@
   <img alt="ironfoil logo" src="media/banner-light.svg">
 </picture>
 
-A tiny command-line tool to transfer to [Awoo installer](https://github.com/Huntereb/Awoo-Installer), [CyberFoil](https://github.com/luketanti/CyberFoil) and probably more Nintendo Switch title installers which are based on the "Tinfoil" protocol.
+A tool to transfer to [many title installers](#which-title-installers-are-supported).
 
 ![demo gif](media/demo.gif)
+
+## Which title installers are supported?
+
+These, based on the TinFoil USB protocol:
+
+- [Awoo Installer](https://github.com/Huntereb/Awoo-Installer)
+- [CyberFoil](https://github.com/luketanti/CyberFoil)
+
+and also:
+
+- [Sphaira](https://github.com/ITotalJustice/sphaira), with its own protocol (make sure you enable Sphaira support when transferring!)
 
 ## Installation
 
@@ -49,7 +60,7 @@ Both of these methods places `ironfoil` in `~/.cargo/bin/`, which normally shoul
 ## Usage
 
 ```present cargo run --bin ironfoil -- -h
-Transfer to Awoo installer from the command-line
+Transfer to NS title installers from the command-line
 
 Usage: ironfoil <COMMAND>
 
