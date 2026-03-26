@@ -2,10 +2,6 @@
 owner = "sermuns"
 repo = "ironfoil"
 
-[bump]
-features_always_bump_minor = false
-breaking_always_bump_major = false
-
 [changelog]
 header = """
 # Changelog\n
