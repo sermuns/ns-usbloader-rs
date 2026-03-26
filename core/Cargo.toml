@@ -9,10 +9,15 @@ authors.workspace = true
 
 [dependencies]
 log.workspace = true
-nusb = "0.2"
 thiserror = "1"
 percent-encoding = "2.3"
 color-eyre.workspace = true
 walkdir = "2"
 crc32c = "0.6"
 crc32fast = "1.5"
+
+[target.'cfg(windows)'.dependencies]
+rusb = "0.9"
+
+[target.'cfg(not(windows))'.dependencies]
+nusb = "0.2"
