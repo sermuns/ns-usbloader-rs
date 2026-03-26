@@ -1,4 +1,7 @@
 use egui::{Align, Align2, Button, Color32, Layout, RichText, TextWrapMode, Theme};
+use egui_toast::Toast;
+use egui_toast::ToastKind;
+use egui_toast::ToastOptions;
 use egui_toast::Toasts;
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -109,4 +112,15 @@ impl eframe::App for App {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, eframe::APP_KEY, self);
     }
+}
+
+pub fn add_toast(toasts: &mut Toasts, kind: ToastKind, text: impl Into<egui::WidgetText>) {
+    toasts.add(Toast {
+        kind,
+        text: text.into(),
+        options: ToastOptions::default(),
+        // .duration_in_seconds(10.)
+        // .show_progress(true),
+        ..Default::default()
+    });
 }
