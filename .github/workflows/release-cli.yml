@@ -132,13 +132,13 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
-            7z a -tzip "${{env.CRATE_NAME}}-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.zip" \
+            7z a -tzip "${{env.CRATE_NAME}}-${{ matrix.build.TARGET }}.zip" \
               ${{env.CRATE_NAME}}-${{ env.RELEASE_VERSION }}/
           else
-            tar -czvf ${{env.CRATE_NAME}}-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz \
+            tar -czvf ${{env.CRATE_NAME}}-${{ matrix.build.TARGET }}.tar.gz \
               ${{env.CRATE_NAME}}-${{ env.RELEASE_VERSION }}/
-            shasum -a 512 ${{env.CRATE_NAME}}-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz \
-              > ${{env.CRATE_NAME}}-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz.sha512
+            shasum -a 512 ${{env.CRATE_NAME}}-${{ matrix.build.TARGET }}.tar.gz \
+              > ${{env.CRATE_NAME}}-${{ matrix.build.TARGET }}.tar.gz.sha512
           fi
 
       - name: Release notes
@@ -152,7 +152,7 @@ jobs:
       - name: Upload the binary releases
         uses: svenstaro/upload-release-action@v2
         with:
-          file: ${{env.CRATE_NAME}}-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}*
+          file: ${{env.CRATE_NAME}}-${{ matrix.build.TARGET }}*
           file_glob: true
           overwrite: true
           tag: ${{ github.ref }}
