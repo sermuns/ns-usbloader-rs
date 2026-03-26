@@ -12,6 +12,7 @@ upgrade-guid = "5A95C071-0E6C-4A6E-9553-4817DC6B8164"
 path-guid = "6E6AD6BA-08A7-4AB3-B49A-E7E3B9050319"
 license = false
 eula = false
+product-icon = "../media/icon-dark.ico"
 
 [dependencies]
 color-eyre.workspace = true
@@ -32,6 +33,7 @@ serde = { version = "1", features = ["derive"] }
 strum = { version = "0.28", features = ["derive"] }
 rfd = "0.17"
 humansize = "2.1.3"
+image = { version = "0.25", default-features = false }
 
 [build-dependencies]
 vergen-gitcl  = "9.1.0"

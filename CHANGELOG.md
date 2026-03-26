@@ -1,6 +1,11 @@
 # Changelog
 
-## [0.2.0](https://github.com/sermuns/ironfoil/compare/v0.1.6..0.2.0) - 2026-03-26
+## [0.3.0](https://github.com/sermuns/ironfoil/compare/v0.2.0..0.3.0) - 2026-03-26
+
+### 🚀 Features
+
+- add program icon and stop console on Windows by @sermuns in [5061662](https://github.com/sermuns/ironfoil/commit/5061662084f3a640248cdc57ff320f4a9cc2c3d1)
+## [v0.2.0](https://github.com/sermuns/ironfoil/compare/v0.1.6..v0.2.0) - 2026-03-26
 
 ### 🚀 Features
 
@@ -52,7 +57,7 @@
 - add release notes to gui release too, cleanup.. by @sermuns in [a7c0aee](https://github.com/sermuns/ironfoil/commit/a7c0aeeeba257164a12dbdba531443cfee0bc275)
 - stop releasing for i686 linux by @sermuns in [abc0cb2](https://github.com/sermuns/ironfoil/commit/abc0cb2713e78637116f1083a838d0a6b66ad6ea)
 - add rust-cache by @sermuns in [0945ba8](https://github.com/sermuns/ironfoil/commit/0945ba879977c17a9920cdf4e445ee10225de186)
-- release v0.2.0 by Samuel Åkesson in [7559cf2](https://github.com/sermuns/ironfoil/commit/7559cf2d2f5f0918505e335b2c8ce3f48f94a2e6)
+- release v0.2.0 by @sermuns in [8a3db31](https://github.com/sermuns/ironfoil/commit/8a3db31b0f67a3149249a05e66c5b8b36abecb82)
 ## [v0.1.6](https://github.com/sermuns/ironfoil/compare/v0.1.5..v0.1.6) - 2026-03-05
 
 ### 🚀 Features

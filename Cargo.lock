@@ -1533,6 +1533,7 @@ dependencies = [
  "egui_extras",
  "env_logger",
  "humansize",
+ "image",
  "ironfoil-core",
  "log",
  "rfd",
