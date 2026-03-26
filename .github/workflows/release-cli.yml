@@ -44,11 +44,11 @@ jobs:
           #     TOOLCHAIN: stable,
           #     TARGET: i686-unknown-linux-gnu,
           #   }
-          - {
-              OS: ubuntu-22.04,
-              TOOLCHAIN: stable,
-              TARGET: i686-unknown-linux-musl,
-            }
+          # - {
+          #     OS: ubuntu-22.04,
+          #     TOOLCHAIN: stable,
+          #     TARGET: i686-unknown-linux-musl,
+          #   }
           # - {
           #     OS: ubuntu-22.04,
           #     TOOLCHAIN: stable,
