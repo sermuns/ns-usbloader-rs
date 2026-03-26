@@ -1,14 +1,34 @@
 # Changelog
 
-## [0.2.1](https://github.com/sermuns/ironfoil/compare/v0.2.0..0.2.1) - 2026-03-26
+## [0.3.0](https://github.com/sermuns/ironfoil/compare/v0.2.1..0.3.0) - 2026-03-26
 
 ### 🚀 Features
 
-- add program icon and stop console on Windows by sermuns in [eccd7b5](https://github.com/sermuns/ironfoil/commit/eccd7b564d18f15c5e0558c2e3d91a59aba9b598)
+- **(gui)** add network install by @sermuns in [2d91ac5](https://github.com/sermuns/ironfoil/commit/2d91ac52fdd3ef98df03da1bcae5cd99052ff14c)
+- **(gui)** add rcm payload injection by @sermuns in [7907931](https://github.com/sermuns/ironfoil/commit/79079313c78440f2b3294845bb576655dce15ab3)
+
+### 🚜 Refactor
+
+- **(gui)** create tabs module by @sermuns in [a161eb0](https://github.com/sermuns/ironfoil/commit/a161eb0c34bd0c1024b1699c0f96424663e29d47)
+- **(gui)** create module per tab by @sermuns in [ca025d0](https://github.com/sermuns/ironfoil/commit/ca025d0149b28853ce7ef12bee65e80629744646)
+
+### 🎨 Styling
+
+- **(gui)** remove top heading and restyle home tab by @sermuns in [e9ea4cc](https://github.com/sermuns/ironfoil/commit/e9ea4ccb9505ab8eb81c3b9ba830357b578d059a)
+- **(gui)** rcm tab ricing by @sermuns in [62483af](https://github.com/sermuns/ironfoil/commit/62483afec78f2dd681e82acb27baf31f737b9605)
 
 ### ⚙️ Miscellaneous Tasks
 
-- release v0.2.1 by sermuns in [c6fb257](https://github.com/sermuns/ironfoil/commit/c6fb2572b54c456775e9b9900acb99a28aa08343)
+- release v0.3.0 by Samuel Åkesson in [04cccae](https://github.com/sermuns/ironfoil/commit/04cccae3664e0f1be34dfbff2a94972fe10a4c5d)
+## [v0.2.1](https://github.com/sermuns/ironfoil/compare/v0.2.0..v0.2.1) - 2026-03-26
+
+### 🚀 Features
+
+- add program icon and stop console on Windows by @sermuns in [eccd7b5](https://github.com/sermuns/ironfoil/commit/eccd7b564d18f15c5e0558c2e3d91a59aba9b598)
+
+### ⚙️ Miscellaneous Tasks
+
+- release v0.2.1 by @sermuns in [1550fcb](https://github.com/sermuns/ironfoil/commit/1550fcb90509ff3382215b95d9837d281b42ee87)
 ## [v0.2.0](https://github.com/sermuns/ironfoil/compare/v0.1.6..v0.2.0) - 2026-03-26
 
 ### 🚀 Features
