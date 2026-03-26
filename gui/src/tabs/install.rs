@@ -1,9 +1,10 @@
-use egui::{Align, Checkbox, Layout, ProgressBar};
+use egui::{Align, Checkbox, Color32, ComboBox, Layout, ProgressBar, RichText, TextEdit, Theme};
 use egui_extras::{Column, TableBuilder};
 use egui_toast::{ToastKind, Toasts};
-use ironfoil_core::{GAME_BACKUP_EXTENSIONS, perform_usb_install};
+use ironfoil_core::{GAME_BACKUP_EXTENSIONS, perform_tinfoil_network_install, perform_usb_install};
 use log::{error, info};
 use std::{
+    net::Ipv4Addr,
     path::PathBuf,
     sync::{
         Arc,
@@ -12,16 +13,20 @@ use std::{
     },
 };
 
-use crate::app::add_toast;
-use crate::tabs::{OngoingInstallation, Pick, StagedFiles, stage_picked};
+use crate::tabs::{OngoingInstallation, Pick, StagedFiles, UsbProtocol, stage_picked};
+use crate::{app::add_toast, tabs::InstallType};
 
+#[allow(clippy::too_many_arguments)] // FIXME:
 pub fn show(
     ui: &mut egui::Ui,
+    theme: &egui::Theme,
     recurse: &mut bool,
-    for_sphaira: &mut bool,
+    install_type: &mut InstallType,
     staged_files: &mut StagedFiles,
     maybe_ongoing_installation: &mut Option<OngoingInstallation>,
     toasts: &mut Toasts,
+    target_ip_string: &mut String,
+    target_ip: &mut Option<Ipv4Addr>,
 ) {
     ui.horizontal(|ui| {
         if ui.button("💾 Pick file").clicked()
@@ -31,12 +36,14 @@ pub fn show(
         {
             stage_picked(Pick::File(game_backup_path), staged_files, toasts);
         }
-        ui.label("or");
-        #[cfg(target_os = "windows")]
-        const PICK_DIRECTORY_LABEL: &str = "🗁 Pick folder";
-        #[cfg(not(target_os = "windows"))]
-        const PICK_DIRECTORY_LABEL: &str = "🗁 Pick directory";
-        if ui.button(PICK_DIRECTORY_LABEL).clicked()
+        ui.weak("or");
+        if ui
+            .button(if cfg!(target_os = "windows") {
+                "🗁 Pick folder"
+            } else {
+                "🗁 Pick directory"
+            })
+            .clicked()
             && let Some(game_backup_path) = rfd::FileDialog::new().pick_folder()
         {
             stage_picked(
@@ -52,15 +59,58 @@ pub fn show(
             "Also discover game backups from subdirectories of the picked directory",
         );
 
-        // FIXME: actually align right
-        ui.add_space(16.);
-        ui.checkbox(for_sphaira, "For Sphaira?");
+        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            if matches!(install_type, InstallType::Network) {
+                let mut text_edit = TextEdit::singleline(target_ip_string)
+                    .hint_text("IP address")
+                    .desired_width(7. * 15.); // random asss. ipv4 addresse should (at most) be 15 characters
+                if target_ip.is_none() {
+                    text_edit = text_edit.background_color(match theme {
+                        Theme::Dark => Color32::DARK_RED,
+                        Theme::Light => Color32::LIGHT_RED,
+                    })
+                }
+
+                if ui.add(text_edit).changed() {
+                    *target_ip = target_ip_string.parse().ok();
+                }
+            }
+            ComboBox::from_label(RichText::new("Install type:").weak())
+                .selected_text(install_type.as_str())
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(
+                        install_type,
+                        InstallType::USB {
+                            protocol: UsbProtocol::TinFoil,
+                        },
+                        InstallType::USB {
+                            protocol: UsbProtocol::TinFoil,
+                        }
+                        .as_str(),
+                    );
+                    ui.selectable_value(
+                        install_type,
+                        InstallType::USB {
+                            protocol: UsbProtocol::Sphaira,
+                        },
+                        InstallType::USB {
+                            protocol: UsbProtocol::Sphaira,
+                        }
+                        .as_str(),
+                    );
+                    ui.selectable_value(
+                        install_type,
+                        InstallType::Network,
+                        InstallType::Network.as_str(),
+                    );
+                });
+        });
     });
 
     ui.group(|ui| {
         if staged_files.is_empty() {
             ui.set_min_size(ui.available_size());
-            ui.weak("No files staged. Pick using the buttons above!");
+            ui.weak("No files staged for installation. Pick using the buttons above!");
             return;
         }
 
@@ -175,16 +225,33 @@ pub fn show(
                 };
             }
         } else if !staged_files.is_empty() {
-            if ui.button("🔌 install now!").clicked() {
-                let game_paths: Vec<_> = staged_files
-                    .files
-                    .iter()
-                    .filter_map(|staged_file| {
-                        staged_file.selected.then_some(staged_file.path.clone())
-                    })
-                    .collect();
+            let game_paths: Vec<_> = staged_files
+                .files
+                .iter()
+                .filter_map(|staged_file| staged_file.selected.then_some(staged_file.path.clone()))
+                .collect();
 
-                start_usb_install(game_paths, *for_sphaira, maybe_ongoing_installation);
+            if ui
+                .button(match install_type {
+                    InstallType::USB { .. } => "🔌 install over USB!",
+                    InstallType::Network => "🖧 install over network!",
+                })
+                .clicked()
+            {
+                if let Some(target_ip) = target_ip {
+                    start_install(
+                        game_paths,
+                        install_type,
+                        target_ip,
+                        maybe_ongoing_installation,
+                    );
+                } else {
+                    add_toast(
+                        toasts,
+                        ToastKind::Error,
+                        "The given target IP address is not valid!",
+                    );
+                }
             }
             if ui.button("❌ remove from list").clicked() {
                 staged_files.remove_selected();
@@ -211,9 +278,10 @@ pub fn show(
     });
 }
 
-fn start_usb_install(
+fn start_install(
     game_paths: Vec<PathBuf>,
-    for_sphaira: bool,
+    install_type: &InstallType,
+    target_ip: &Ipv4Addr,
     maybe_ongoing_installation: &mut Option<OngoingInstallation>,
 ) {
     let (progress_len_tx, progress_len_rx) = mpsc::channel::<u64>();
@@ -222,18 +290,37 @@ fn start_usb_install(
     let cancel = Arc::new(AtomicBool::new(false));
     let cancel_thread = cancel.clone();
 
+    let thread = match install_type {
+        InstallType::USB { protocol } => {
+            let for_sphaira = matches!(protocol, UsbProtocol::Sphaira);
+            std::thread::spawn(move || {
+                perform_usb_install(
+                    &game_paths,
+                    progress_len_tx,
+                    progress_tx,
+                    for_sphaira,
+                    cancel_thread,
+                )
+            })
+        }
+        InstallType::Network => {
+            let target_ip = *target_ip;
+            std::thread::spawn(move || {
+                perform_tinfoil_network_install(
+                    game_paths,
+                    target_ip,
+                    progress_len_tx,
+                    progress_tx,
+                    Some(cancel_thread),
+                )
+            })
+        }
+    };
+
     *maybe_ongoing_installation = Some(OngoingInstallation {
         progress_len_rx,
         progress_rx,
-        thread: std::thread::spawn(move || {
-            perform_usb_install(
-                &game_paths,
-                progress_len_tx,
-                progress_tx,
-                for_sphaira,
-                cancel_thread,
-            )
-        }),
+        thread,
         last_progress: 0,
         last_progress_len: 1,
         cancel,

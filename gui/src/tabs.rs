@@ -2,6 +2,7 @@ use egui_toast::{ToastKind, Toasts};
 use log::error;
 use serde::{Deserialize, Serialize};
 use std::{
+    net::Ipv4Addr,
     path::PathBuf,
     sync::{Arc, atomic::AtomicBool, mpsc},
     thread::JoinHandle,
@@ -11,24 +12,56 @@ use strum::EnumIter;
 use crate::app::add_toast;
 
 mod home;
-mod network;
+mod install;
 mod rcm;
-mod usb;
 
 #[derive(Serialize, Deserialize, EnumIter)]
 pub enum Tab {
     Home,
-    Usb {
+    Install {
         recurse: bool,
-        for_sphaira: bool,
+        install_type: InstallType,
         #[serde(skip)]
         staged_files: StagedFiles,
         #[serde(skip)]
         maybe_ongoing_installation: Option<OngoingInstallation>,
     },
-    Network,
     Rcm,
     // Log,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub enum UsbProtocol {
+    TinFoil,
+    Sphaira,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub enum InstallType {
+    USB { protocol: UsbProtocol },
+    Network,
+}
+
+impl InstallType {
+    pub fn as_str(&self) -> &str {
+        match self {
+            InstallType::USB {
+                protocol: UsbProtocol::TinFoil,
+            } => "🔌 USB (Awoo, CyberFoil, etc.)",
+            InstallType::USB {
+                protocol: UsbProtocol::Sphaira,
+            } => "🔌 USB (Sphaira)",
+            InstallType::Network => "🖧 Network",
+        }
+    }
+}
+
+impl Default for InstallType {
+    fn default() -> Self {
+        Self::USB {
+            protocol: UsbProtocol::TinFoil,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -136,30 +169,38 @@ impl Tab {
     pub fn as_str(&self) -> &'static str {
         match self {
             Tab::Home => "🏠 Home",
-            Tab::Usb { .. } => "🔌 USB",
-            Tab::Network => "🌐 Network",
+            Tab::Install { .. } => "📥 Install",
             Tab::Rcm => "📎 RCM",
             // Tab::Log => "📜 Log",
         }
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, theme: &egui::Theme, toasts: &mut Toasts) {
+    pub fn show(
+        &mut self,
+        ui: &mut egui::Ui,
+        theme: &egui::Theme,
+        toasts: &mut Toasts,
+        target_ip_string: &mut String,
+        target_ip: &mut Option<Ipv4Addr>,
+    ) {
         match self {
             Tab::Home => home::show(ui, theme),
-            Tab::Usb {
+            Tab::Install {
                 recurse,
-                for_sphaira,
+                install_type,
                 staged_files,
                 maybe_ongoing_installation,
-            } => usb::show(
+            } => install::show(
                 ui,
+                theme,
                 recurse,
-                for_sphaira,
+                install_type,
                 staged_files,
                 maybe_ongoing_installation,
                 toasts,
+                target_ip_string,
+                target_ip,
             ),
-            Tab::Network => network::show(ui),
             Tab::Rcm => rcm::show(ui),
         }
     }

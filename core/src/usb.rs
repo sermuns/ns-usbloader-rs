@@ -522,7 +522,7 @@ pub fn perform_usb_install(
             &mut ep_in,
             &mut ep_out,
             cancel,
-            &game_paths,
+            game_paths,
             progress_len_tx,
             progress_tx,
         )?;

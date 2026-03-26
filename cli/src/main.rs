@@ -106,13 +106,15 @@ fn main() -> color_eyre::Result<()> {
             let (progress_len_tx, progress_len_rx) = mpsc::channel::<u64>();
             let (progress_tx, progress_rx) = mpsc::channel::<u64>();
 
+            let game_paths =
+                read_game_paths(&transfer_args.game_backup_path, transfer_args.recurse)?;
             let network_install_thread = std::thread::spawn(move || {
                 perform_tinfoil_network_install(
-                    &transfer_args.game_backup_path,
-                    transfer_args.recurse,
+                    game_paths,
                     target_ip,
                     progress_len_tx,
                     progress_tx,
+                    None,
                 )
             });
 

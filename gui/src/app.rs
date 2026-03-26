@@ -1,3 +1,5 @@
+use std::net::Ipv4Addr;
+
 use egui::{Align, Align2, Button, Color32, Layout, RichText, TextWrapMode, Theme};
 use egui_toast::Toast;
 use egui_toast::ToastKind;
@@ -13,6 +15,9 @@ use crate::tabs::Tab;
 #[serde(default)]
 pub struct App {
     tab: Tab,
+    target_ip: Option<Ipv4Addr>,
+    #[serde(skip)]
+    target_ip_string: String,
     #[serde(skip)]
     toasts: Toasts,
 }
@@ -21,6 +26,8 @@ impl Default for App {
     fn default() -> Self {
         Self {
             tab: Tab::Home,
+            target_ip: None,
+            target_ip_string: String::new(),
             toasts: Toasts::new()
                 .anchor(Align2::CENTER_CENTER, egui::Pos2::ZERO)
                 .direction(egui::Direction::BottomUp),
@@ -42,10 +49,17 @@ impl App {
         });
 
         if let Some(storage) = cc.storage {
-            info!("read from stored");
-            eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
+            eframe::get_value(storage, eframe::APP_KEY)
+                .map(|mut stored: App| {
+                    // kinda shitty, but works
+                    stored.target_ip_string = stored
+                        .target_ip
+                        .map(|ip| ip.to_string())
+                        .unwrap_or_default();
+                    stored
+                })
+                .unwrap_or_default()
         } else {
-            info!("no stored");
             Default::default()
         }
     }
@@ -102,7 +116,13 @@ impl eframe::App for App {
             ui.heading(env!("CARGO_PKG_NAME"));
             ui.separator();
             ui.add_space(8.);
-            self.tab.show(ui, &ctx.theme(), &mut self.toasts);
+            self.tab.show(
+                ui,
+                &ctx.theme(),
+                &mut self.toasts,
+                &mut self.target_ip_string,
+                &mut self.target_ip,
+            );
             self.toasts.show(ctx);
         });
 
