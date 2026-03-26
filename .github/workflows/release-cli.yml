@@ -114,7 +114,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Build
-        run: cargo build --release --locked --target ${{ matrix.build.TARGET }}
+        run: cargo build -p ironfoil --release --locked --target ${{ matrix.build.TARGET }}
 
       - name: Prepare release assets
         shell: bash
@@ -174,4 +174,4 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Publish
-        run: cargo publish --locked --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish -p ironfoil --locked --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
