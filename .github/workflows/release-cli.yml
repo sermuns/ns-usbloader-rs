@@ -175,4 +175,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Publish
-        run: cargo publish -p ironfoil --locked --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          cargo publish -p ironfoil-core --locked --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          cargo publish -p ironfoil --locked --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
