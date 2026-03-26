@@ -140,6 +140,10 @@ jobs:
       - name: Install dependencies
         run: |
           ${{ matrix.packages_install }}
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+
       - name: Build artifacts
         run: |
           # Actually do builds and make zips and whatnot
