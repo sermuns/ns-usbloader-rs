@@ -7,6 +7,9 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+[package.metadata.dist]
+dist = false
+
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 color-eyre.workspace = true

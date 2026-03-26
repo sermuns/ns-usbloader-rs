@@ -1,6 +1,46 @@
 # Changelog
 
-## [0.1.6](https://github.com/sermuns/ironfoil/compare/v0.1.5..0.1.6) - 2026-03-05
+## [0.2.0](https://github.com/sermuns/ironfoil/compare/v0.1.6..0.2.0) - 2026-03-26
+
+### 🚀 Features
+
+- **(core)** add sphaira usb install support by @sermuns in [54c3a49](https://github.com/sermuns/ironfoil/commit/54c3a49611b84f27feaa4a7550a462d3b9e3f88b)
+- **(gui)** begin creating GUI by @sermuns in [4e7fe5c](https://github.com/sermuns/ironfoil/commit/4e7fe5c7db6c3debb265ef3da1a7d83a4df46d80)
+- **(gui)** style add icons, semi working transfer by @sermuns in [0d0822c](https://github.com/sermuns/ironfoil/commit/0d0822c2c9e2fb5f9f8938044a081ef99952ec87)
+- **(gui)** add sphaira support by @sermuns in [9de9061](https://github.com/sermuns/ironfoil/commit/9de9061cf5715087a56084db1ea9dfc3bb303c37)
+- better Dockerfile, using cargo-chef by @sermuns in [9fa1c38](https://github.com/sermuns/ironfoil/commit/9fa1c38892cfd19b397e3181c5614cea5352c942)
+- better error on permission denied by @sermuns in [6a34b90](https://github.com/sermuns/ironfoil/commit/6a34b904c113823c29ebf3ddd474587bb555d69d)
+- remove indicatif from core, use mpsc::Channel to synchronize progress by @sermuns in [7e61d74](https://github.com/sermuns/ironfoil/commit/7e61d74f935c88b310bf1aaba73976033eef3669)
+- add cancelling and stop using suggestion() by @sermuns in [a44854b](https://github.com/sermuns/ironfoil/commit/a44854b9fdc59a987a7a81b8554a9e5234ae8f57)
+- fully working GUI, refactor a lot of code by @sermuns in [8bad5c7](https://github.com/sermuns/ironfoil/commit/8bad5c7eaf541f416a7aa67ae4aa290ea71ff956)
+- simplify, reword GUI and error by @sermuns in [d474ab3](https://github.com/sermuns/ironfoil/commit/d474ab39ef4fed08ab1caf9778e3db02b21e70e3)
+- add distributioning with `cargo-dist` by @sermuns in [e365d56](https://github.com/sermuns/ironfoil/commit/e365d564a4e3244e51eb15dac243e71a01df3b39)
+
+### 🐛 Bug Fixes
+
+- use installer-generic language in error by @sermuns in [ef1eb8f](https://github.com/sermuns/ironfoil/commit/ef1eb8fbe9b84f24bce273f69acff617456064c6)
+- align center by @sermuns in [c986fc8](https://github.com/sermuns/ironfoil/commit/c986fc8ff9d0e609f4092ac5949147de543875a3)
+
+### 🚜 Refactor
+
+- export `GAME_BACKUP_EXTENSIONS` by @sermuns in [782caa1](https://github.com/sermuns/ironfoil/commit/782caa1d20c16032959352b20c05ce8336e87c5b)
+
+### 📚 Documentation
+
+- update README by @sermuns in [d3a4d07](https://github.com/sermuns/ironfoil/commit/d3a4d07ac9099791de81b72f56bf19dc93074da8)
+- update demos and begin explaining GUI installation by @sermuns in [c5374ba](https://github.com/sermuns/ironfoil/commit/c5374ba09dbfeefa5d2e927c94eaa4ee696e8c3e)
+
+### ⚙️ Miscellaneous Tasks
+
+- add push recipe by @sermuns in [e647d6c](https://github.com/sermuns/ironfoil/commit/e647d6cd97bda01507e258cdab079768310dbba9)
+- add TODO to network by @sermuns in [b66bd08](https://github.com/sermuns/ironfoil/commit/b66bd087e80349c011af17df229f20cbde64b6b9)
+- don't optimize debug build by @sermuns in [e53b8d2](https://github.com/sermuns/ironfoil/commit/e53b8d27202ceaba27316810bcf4dc9f7d955636)
+- Update README.md (#18) by @binarymelon in [b18fac5](https://github.com/sermuns/ironfoil/commit/b18fac5b8fa37a1b84f95758b26811f6607582f1)
+- update README and description for more general title installers by @sermuns in [bf8d530](https://github.com/sermuns/ironfoil/commit/bf8d5304e0de7f7fc4e9347c24d1223843f148c8)
+- make features bump minor by @sermuns in [b45f10e](https://github.com/sermuns/ironfoil/commit/b45f10ef0417ae78acf64137182466cb6423d272)
+- allow dirty ci by @sermuns in [309bf8b](https://github.com/sermuns/ironfoil/commit/309bf8b7c1b4bf69b6c0714097e9319eeb386951)
+- don't use cargo-dist for CLI by @sermuns in [376a732](https://github.com/sermuns/ironfoil/commit/376a7323977d90cdcbbc2397b34baeb81c066db4)
+## [v0.1.6](https://github.com/sermuns/ironfoil/compare/v0.1.5..v0.1.6) - 2026-03-05
 
 ### 🚀 Features
 
@@ -12,7 +52,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- release v0.1.6 by Samuel Åkesson in [4cd242d](https://github.com/sermuns/ironfoil/commit/4cd242d19f54315b7bee9f1ca1d6a0b84a2caadb)
+- release v0.1.6 by @sermuns in [5845411](https://github.com/sermuns/ironfoil/commit/58454118fa967d80f2ee27039a6fa3308d5871dd)
 ## [v0.1.5](https://github.com/sermuns/ironfoil/compare/v0.1.4..v0.1.5) - 2026-03-05
 
 ### 🚀 Features
