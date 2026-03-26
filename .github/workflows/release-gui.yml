@@ -143,6 +143,8 @@ jobs:
 
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.runner }}
 
       - name: Build artifacts
         run: |
