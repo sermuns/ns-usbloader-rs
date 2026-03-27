@@ -10,6 +10,9 @@ authors.workspace = true
 [package.metadata.dist]
 dist = false
 
+[lints]
+workspace = true
+
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 color-eyre.workspace = true
