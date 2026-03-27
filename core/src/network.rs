@@ -3,8 +3,8 @@ use color_eyre::eyre::Context;
 use log::{debug, error, info};
 use percent_encoding::{AsciiSet, CONTROLS, percent_decode_str, utf8_percent_encode};
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, mpsc};
 use std::thread::{self, sleep};
 use std::{
     fs::File,
@@ -12,6 +12,8 @@ use std::{
     net::{IpAddr, Ipv4Addr, TcpListener, TcpStream},
     time::Duration,
 };
+
+use crate::{InstallProgressEvent, InstallProgressSender};
 
 // TODO: listen to random high-range port instead, it really doesn't matter!
 // also maybe keep trying to find available port if collision happens
@@ -27,8 +29,7 @@ fn serve_http(
     game_paths: &[PathBuf],
     host_ip: IpAddr,
     run_http_server: &AtomicBool,
-    progress_len_tx: mpsc::Sender<u64>,
-    progress_tx: mpsc::Sender<u64>,
+    progress_tx: InstallProgressSender,
 ) -> color_eyre::Result<()> {
     let listener = TcpListener::bind((host_ip, HOST_HTTP_PORT))
         .wrap_err_with(|| {
@@ -90,7 +91,7 @@ fn serve_http(
             .unwrap()
             .len();
 
-        progress_len_tx.send(game_size)?;
+        let _ = progress_tx.send(InstallProgressEvent::TotalLengthBytes(game_size));
 
         match method {
             "GET" => {
@@ -102,7 +103,7 @@ fn serve_http(
                 let range_end: u64 = range_parts.next().unwrap().parse().unwrap();
                 let range_length = range_end - range_start + 1;
 
-                progress_tx.send(range_start)?;
+                let _ = progress_tx.send(InstallProgressEvent::TotalOffsetBytes(range_start));
 
                 let mut file = File::open(requested_game_path.as_ref()).unwrap();
                 file.seek(SeekFrom::Start(range_start)).unwrap();
@@ -141,8 +142,7 @@ fn serve_http(
 pub fn perform_tinfoil_network_install(
     game_paths: Vec<PathBuf>,
     target_ip: Ipv4Addr,
-    progress_len_tx: mpsc::Sender<u64>,
-    progress_tx: mpsc::Sender<u64>,
+    progress_tx: InstallProgressSender,
     cancel: Option<Arc<AtomicBool>>,
 ) -> color_eyre::Result<()> {
     println!("Performing network install to {}", target_ip);
@@ -169,7 +169,6 @@ pub fn perform_tinfoil_network_install(
             &game_paths,
             host_ip,
             run_http_server_thread.as_ref(),
-            progress_len_tx,
             progress_tx,
         )
     });

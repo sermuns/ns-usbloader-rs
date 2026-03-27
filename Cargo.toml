@@ -25,6 +25,7 @@ trivially_copy_by_ref.level = "deny"
 items_after_statements = "allow"
 cast_possible_truncation = "allow" # i mean we all have 64-bit PCs, right????
 missing_errors_doc = "allow"
+missing_panics_doc = "allow"
 
 [profile.release]
 opt-level = 3

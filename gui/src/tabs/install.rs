@@ -1,7 +1,10 @@
 use egui::{Align, Checkbox, Color32, ComboBox, Layout, ProgressBar, RichText, TextEdit, Theme};
 use egui_extras::{Column, TableBuilder};
 use egui_toast::{ToastKind, Toasts};
-use ironfoil_core::{GAME_BACKUP_EXTENSIONS, perform_tinfoil_network_install, perform_usb_install};
+use ironfoil_core::{
+    GAME_BACKUP_EXTENSIONS, InstallProgressEvent, perform_tinfoil_network_install,
+    perform_usb_install,
+};
 use log::{error, info};
 use std::{
     net::Ipv4Addr,
@@ -160,27 +163,12 @@ pub fn show(
     });
     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
         if let Some(ongoing_installation) = maybe_ongoing_installation {
-            if let Ok(progress_len) = ongoing_installation.progress_len_rx.try_recv() {
-                info!("got progress len: {}", progress_len);
-                ongoing_installation.last_progress_len = progress_len;
-            }
-            if let Ok(progress) = ongoing_installation.progress_rx.try_recv() {
-                info!("got progress: {}", progress);
-                ongoing_installation.last_progress = progress;
-            }
-            let progress: f32 = ongoing_installation.last_progress as f32
-                / ongoing_installation.last_progress_len as f32;
-            info!(
-                "progress: {}/{} ({:.2}%)",
-                ongoing_installation.last_progress,
-                ongoing_installation.last_progress_len,
-                progress * 100.
-            );
+            ongoing_installation.handle_progress_events();
             ui.horizontal(|ui| {
                 if ui.button("❌ cancel").clicked() {
                     ongoing_installation.cancel.store(true, Ordering::Relaxed);
                 }
-                ui.add(ProgressBar::new(progress));
+                ui.add(ProgressBar::new(ongoing_installation.last_progress));
             });
 
             // thread is finished? take it!
@@ -238,20 +226,13 @@ pub fn show(
                 })
                 .clicked()
             {
-                if let Some(target_ip) = target_ip {
-                    start_install(
-                        game_paths,
-                        install_type,
-                        *target_ip,
-                        maybe_ongoing_installation,
-                    );
-                } else {
-                    add_toast(
-                        toasts,
-                        ToastKind::Error,
-                        "The given target IP address is not valid!",
-                    );
-                }
+                start_install(
+                    game_paths,
+                    install_type,
+                    *target_ip,
+                    maybe_ongoing_installation,
+                    toasts,
+                );
             }
             if ui.button("❌ remove from list").clicked() {
                 staged_files.remove_selected();
@@ -268,11 +249,11 @@ pub fn show(
 fn start_install(
     game_paths: Vec<PathBuf>,
     install_type: &InstallType,
-    target_ip: Ipv4Addr,
+    target_ip: Option<Ipv4Addr>,
     maybe_ongoing_installation: &mut Option<OngoingInstallation>,
+    toasts: &mut Toasts,
 ) {
-    let (progress_len_tx, progress_len_rx) = mpsc::channel::<u64>();
-    let (progress_tx, progress_rx) = mpsc::channel::<u64>();
+    let (progress_tx, progress_rx) = mpsc::channel::<InstallProgressEvent>();
 
     let cancel = Arc::new(AtomicBool::new(false));
     let cancel_thread = cancel.clone();
@@ -281,32 +262,35 @@ fn start_install(
         InstallType::Usb { protocol } => {
             let for_sphaira = matches!(protocol, UsbProtocol::Sphaira);
             std::thread::spawn(move || {
-                perform_usb_install(
-                    &game_paths,
-                    progress_len_tx,
+                perform_usb_install(&game_paths, progress_tx, for_sphaira, cancel_thread)
+            })
+        }
+        InstallType::Network => {
+            let Some(target_ip) = target_ip else {
+                add_toast(
+                    toasts,
+                    ToastKind::Error,
+                    "The given target IP address is not valid!",
+                );
+                return;
+            };
+            std::thread::spawn(move || {
+                perform_tinfoil_network_install(
+                    game_paths,
+                    target_ip,
                     progress_tx,
-                    for_sphaira,
-                    cancel_thread,
+                    Some(cancel_thread),
                 )
             })
         }
-        InstallType::Network => std::thread::spawn(move || {
-            perform_tinfoil_network_install(
-                game_paths,
-                target_ip,
-                progress_len_tx,
-                progress_tx,
-                Some(cancel_thread),
-            )
-        }),
     };
 
     *maybe_ongoing_installation = Some(OngoingInstallation {
-        progress_len_rx,
         progress_rx,
-        thread,
-        last_progress: 0,
-        last_progress_len: 1,
+        last_total_length_bytes: 1,
+        last_total_offset_bytes: 0,
+        last_progress: 0.0,
         cancel,
+        thread,
     });
 }

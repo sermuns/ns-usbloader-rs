@@ -6,9 +6,11 @@ use nusb::{
 };
 use std::{
     path::PathBuf,
-    sync::{Arc, atomic::AtomicBool, mpsc},
+    sync::{Arc, atomic::AtomicBool},
     time::Duration,
 };
+
+use crate::InstallProgressSender;
 
 mod sphaira;
 mod tinfoil;
@@ -17,8 +19,7 @@ pub const USB_TIMEOUT: Duration = Duration::from_millis(500);
 
 pub fn perform_usb_install(
     game_paths: &[PathBuf],
-    progress_len_tx: mpsc::Sender<u64>,
-    progress_tx: mpsc::Sender<u64>,
+    progress_tx: InstallProgressSender,
     for_sphaira: bool,
     cancel: impl Into<Option<Arc<AtomicBool>>>,
 ) -> color_eyre::Result<()> {
@@ -98,27 +99,13 @@ pub fn perform_usb_install(
 
     if for_sphaira {
         eprintln!("Starting Sphaira USB install.");
-        sphaira::do_workloop(
-            &mut ep_in,
-            &mut ep_out,
-            cancel,
-            game_paths,
-            progress_len_tx,
-            progress_tx,
-        )
-        .inspect_err(|_| {
-            let _ = sphaira::send_result(&mut ep_out, sphaira::RESULT_ERROR, None, None);
-        })?;
+        sphaira::do_workloop(&mut ep_in, &mut ep_out, cancel, game_paths, progress_tx)
+            .inspect_err(|_| {
+                let _ = sphaira::send_result(&mut ep_out, sphaira::RESULT_ERROR, None, None);
+            })?;
     } else {
         eprintln!("Starting tinfoil USB install.");
-        tinfoil::do_workloop(
-            &mut ep_in,
-            &mut ep_out,
-            cancel,
-            game_paths,
-            progress_len_tx,
-            progress_tx,
-        )?;
+        tinfoil::do_workloop(&mut ep_in, &mut ep_out, cancel, game_paths, progress_tx)?;
     }
 
     let num_games_installed = game_paths.len();

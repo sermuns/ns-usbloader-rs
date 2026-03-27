@@ -1,7 +1,8 @@
 use clap::{Args, Parser, Subcommand};
 use indicatif::{ProgressBar, ProgressStyle};
 use ironfoil_core::{
-    perform_tinfoil_network_install, perform_usb_install, read_game_paths, send_rcm_payload,
+    InstallProgressEvent, InstallProgressSender, perform_tinfoil_network_install,
+    perform_usb_install, read_game_paths, send_rcm_payload,
 };
 use std::{
     net::Ipv4Addr,
@@ -57,12 +58,6 @@ enum InstallType {
     },
 }
 
-fn create_progress_bar() -> ProgressBar {
-    ProgressBar::no_length().with_style(
-        ProgressStyle::with_template("ETA: {eta} ({binary_bytes_per_sec}) {wide_bar} {binary_bytes} of {binary_total_bytes} sent").unwrap(),
-    )
-}
-
 fn main() -> color_eyre::Result<()> {
     env_logger::builder()
         .format_source_path(cfg!(debug_assertions))
@@ -85,8 +80,8 @@ fn main() -> color_eyre::Result<()> {
         } => run_install(
             &game_backup_path,
             recurse,
-            move |game_paths, progress_len_tx, progress_tx| {
-                perform_usb_install(&game_paths, progress_len_tx, progress_tx, for_sphaira, None)
+            move |game_paths, progress_tx| {
+                perform_usb_install(&game_paths, progress_tx, for_sphaira, None)
             },
         )?,
         InstallType::Network {
@@ -99,14 +94,8 @@ fn main() -> color_eyre::Result<()> {
         } => run_install(
             &game_backup_path,
             recurse,
-            move |game_paths, progress_len_tx, progress_tx| {
-                perform_tinfoil_network_install(
-                    game_paths,
-                    target_ip,
-                    progress_len_tx,
-                    progress_tx,
-                    None,
-                )
+            move |game_paths, progress_tx| {
+                perform_tinfoil_network_install(game_paths, target_ip, progress_tx, None)
             },
         )?,
         InstallType::Rcm { payload_path } => send_rcm_payload(&payload_path)?,
@@ -120,31 +109,33 @@ fn run_install<F>(
     install_closure: F,
 ) -> color_eyre::Result<()>
 where
-    F: FnOnce(
-            Vec<std::path::PathBuf>,
-            mpsc::Sender<u64>,
-            mpsc::Sender<u64>,
-        ) -> color_eyre::Result<()>
+    F: FnOnce(Vec<std::path::PathBuf>, InstallProgressSender) -> color_eyre::Result<()>
         + Send
         + 'static,
 {
-    let pb = create_progress_bar();
+    let total_pb = ProgressBar::no_length().with_style(
+        ProgressStyle::with_template("ETA: {eta} ({binary_bytes_per_sec}) {wide_bar} {binary_bytes} of {binary_total_bytes} sent").unwrap(),
+    );
+    let content_pb = ProgressBar::no_length();
 
     let game_paths = read_game_paths(game_backup_path, recurse)?;
 
-    let (progress_len_tx, progress_len_rx) = mpsc::channel::<u64>();
-    let (progress_tx, progress_rx) = mpsc::channel::<u64>();
+    let (progress_tx, progress_rx) = mpsc::channel::<InstallProgressEvent>();
 
-    let thread =
-        std::thread::spawn(move || install_closure(game_paths, progress_len_tx, progress_tx));
+    let thread = std::thread::spawn(move || install_closure(game_paths, progress_tx));
 
     while !thread.is_finished() {
-        if let Ok(total_len) = progress_len_rx.try_recv() {
-            pb.set_length(total_len);
-        }
-
-        if let Ok(progress) = progress_rx.try_recv() {
-            pb.set_position(progress);
+        if let Ok(progress_event) = progress_rx.try_recv() {
+            match progress_event {
+                InstallProgressEvent::Message(msg) => total_pb.set_message(msg),
+                InstallProgressEvent::TotalOffsetBytes(offset) => total_pb.set_position(offset),
+                InstallProgressEvent::TotalLengthBytes(length) => total_pb.set_length(length),
+                InstallProgressEvent::FileLengthBytes(length) => content_pb.set_length(length),
+                InstallProgressEvent::FileOffsetBytes(offset) => {
+                    content_pb.set_position(offset);
+                    total_pb.inc(offset);
+                }
+            }
         }
     }
 

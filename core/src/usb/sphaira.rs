@@ -11,12 +11,14 @@ use std::{
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
-        mpsc,
     },
 };
 use thiserror::Error;
 
-use crate::usb::{read_usb, write_usb};
+use crate::{
+    InstallProgressEvent, InstallProgressSender,
+    usb::{read_usb, write_usb},
+};
 
 const EXPECTED_MAGIC: u32 = u32::from_be_bytes(*b"SPH0");
 const PACKET_SIZE: usize = 24;
@@ -118,7 +120,7 @@ fn do_file_transfer_loop(
     ep_out: &mut Endpoint<Bulk, Out>,
     cancel: Option<&AtomicBool>,
     mut file_reader: impl Read + Seek,
-    progress_tx: &mpsc::Sender<u64>,
+    progress_tx: &InstallProgressSender,
 ) -> color_eyre::Result<()> {
     loop {
         if cancel.is_some_and(|c| c.load(Ordering::Relaxed)) {
@@ -143,7 +145,7 @@ fn do_file_transfer_loop(
         let offset = send_header.get_offset();
         let size = send_header.get_size();
 
-        let _ = progress_tx.send(offset);
+        let _ = progress_tx.send(InstallProgressEvent::TotalOffsetBytes(offset));
 
         if (offset == 0) && (size == 0) {
             debug!("file transfer complete!");
@@ -175,8 +177,7 @@ fn transfer_single_file(
     ep_out: &mut Endpoint<Bulk, Out>,
     cancel: Option<&AtomicBool>,
     game_path: impl AsRef<Path>,
-    progress_len_tx: &mpsc::Sender<u64>,
-    progress_tx: &mpsc::Sender<u64>,
+    progress_tx: &InstallProgressSender,
 ) -> color_eyre::Result<()> {
     let game_path = game_path.as_ref();
     info!("transferring file {}...", game_path.display());
@@ -194,7 +195,7 @@ fn transfer_single_file(
         })?
         .len();
 
-    let _ = progress_len_tx.send(file_size);
+    let _ = progress_tx.send(InstallProgressEvent::TotalLengthBytes(file_size));
 
     let size_lsb = file_size as u32;
     let size_msb = u32::from((file_size >> 32) as u16) | (flags << 16);
@@ -212,8 +213,7 @@ pub fn do_workloop(
     ep_out: &mut Endpoint<Bulk, Out>,
     cancel: Option<Arc<AtomicBool>>,
     game_paths: &[PathBuf],
-    progress_len_tx: mpsc::Sender<u64>,
-    progress_tx: mpsc::Sender<u64>,
+    progress_tx: InstallProgressSender,
 ) -> color_eyre::Result<()> {
     loop {
         let SendHeader {
@@ -249,8 +249,6 @@ pub fn do_workloop(
                     // FIXME: fucked up!!! avoid Arc nonsense within this file!
                     cancel.as_ref().map(AsRef::as_ref),
                     game_path,
-                    // FIXME: fucked up!!! refernence of Sender!?
-                    &progress_len_tx,
                     // FIXME: fucked up!!! refernence of Sender!?
                     &progress_tx,
                 )?;

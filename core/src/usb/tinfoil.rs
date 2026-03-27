@@ -11,12 +11,14 @@ use std::{
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
-        mpsc,
     },
     time::Duration,
 };
 
-use crate::usb::{read_usb, write_usb};
+use crate::{
+    InstallProgressEvent, InstallProgressSender,
+    usb::{read_usb, write_usb},
+};
 
 pub mod command_direction {
     pub const RESPONSE: [u8; 4] = 0u32.to_le_bytes();
@@ -42,8 +44,7 @@ pub fn file_range_command(
     ep_in: &mut Endpoint<Bulk, In>,
     ep_out: &mut Endpoint<Bulk, Out>,
     game_paths: &[PathBuf],
-    progress_len_tx: &mpsc::Sender<u64>,
-    progress_tx: &mpsc::Sender<u64>,
+    progress_tx: &InstallProgressSender,
 ) -> color_eyre::Result<()> {
     let file_range_header = read_usb(ep_in)?;
 
@@ -61,7 +62,7 @@ pub fn file_range_command(
         );
     }
 
-    info!("sending {}", &game_path);
+    let _ = progress_tx.send(InstallProgressEvent::Message(game_path.to_string()));
 
     info!(
         "Range size: {}, Range offset: {}, Name len: {}, Name: {}",
@@ -74,12 +75,14 @@ pub fn file_range_command(
 
     if let Ok(metadata) = file.metadata() {
         let file_size = metadata.len();
-        progress_len_tx.send(file_size)?;
+        let _ = progress_tx.send(InstallProgressEvent::TotalLengthBytes(file_size));
     }
 
     let mut reader = BufReader::new(file);
 
     reader.seek(SeekFrom::Start(range_offset))?;
+    let _ = progress_tx.send(InstallProgressEvent::TotalOffsetBytes(range_offset));
+    let _ = progress_tx.send(InstallProgressEvent::FileLengthBytes(range_size as u64));
 
     let mut current_offset = 0;
     let end_offset = range_size;
@@ -100,7 +103,7 @@ pub fn file_range_command(
         debug!("sent {} bytes", read_size);
 
         current_offset += read_size;
-        progress_tx.send(current_offset as u64)?;
+        progress_tx.send(InstallProgressEvent::FileOffsetBytes(current_offset as u64))?;
     }
 
     Ok(())
@@ -111,8 +114,7 @@ pub fn do_workloop(
     ep_out: &mut Endpoint<Bulk, Out>,
     cancel: Option<Arc<AtomicBool>>,
     game_paths: &[PathBuf],
-    progress_len_tx: mpsc::Sender<u64>,
-    progress_tx: mpsc::Sender<u64>,
+    progress_tx: InstallProgressSender,
 ) -> color_eyre::Result<()> {
     loop {
         if cancel.as_ref().is_some_and(|c| c.load(Ordering::Relaxed)) {
@@ -148,7 +150,7 @@ pub fn do_workloop(
             }
             command::FILE_RANGE => {
                 debug!("got file range command");
-                file_range_command(ep_in, ep_out, game_paths, &progress_len_tx, &progress_tx)?;
+                file_range_command(ep_in, ep_out, game_paths, &progress_tx)?;
             }
             _ => bail!("invalid tinfoil command encountered!"),
         }
