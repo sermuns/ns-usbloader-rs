@@ -26,7 +26,7 @@ fn urlencode(input: &str) -> String {
 fn serve_http(
     game_paths: &[PathBuf],
     host_ip: IpAddr,
-    run_http_server: Arc<AtomicBool>,
+    run_http_server: &AtomicBool,
     progress_len_tx: mpsc::Sender<u64>,
     progress_tx: mpsc::Sender<u64>,
 ) -> color_eyre::Result<()> {
@@ -168,7 +168,7 @@ pub fn perform_tinfoil_network_install(
         serve_http(
             &game_paths,
             host_ip,
-            run_http_server_thread,
+            run_http_server_thread.as_ref(),
             progress_len_tx,
             progress_tx,
         )
