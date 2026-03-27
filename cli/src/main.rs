@@ -60,7 +60,9 @@ fn create_progress_bar() -> ProgressBar {
 }
 
 fn main() -> color_eyre::Result<()> {
-    env_logger::builder().format_source_path(true).init();
+    env_logger::builder()
+        .format_source_path(cfg!(debug_assertions))
+        .init();
     color_eyre::config::HookBuilder::default()
         .display_env_section(false)
         .display_location_section(cfg!(debug_assertions))
