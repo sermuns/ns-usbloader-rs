@@ -91,7 +91,7 @@ fn serve_http(
             .unwrap()
             .len();
 
-        let _ = progress_tx.send(InstallProgressEvent::TotalLengthBytes(game_size));
+        let _ = progress_tx.send(InstallProgressEvent::AllFilesLengthBytes(game_size));
 
         match method {
             "GET" => {
@@ -103,7 +103,7 @@ fn serve_http(
                 let range_end: u64 = range_parts.next().unwrap().parse().unwrap();
                 let range_length = range_end - range_start + 1;
 
-                let _ = progress_tx.send(InstallProgressEvent::TotalOffsetBytes(range_start));
+                let _ = progress_tx.send(InstallProgressEvent::AllFilesOffsetBytes(range_start));
 
                 let mut file = File::open(requested_game_path.as_ref()).unwrap();
                 file.seek(SeekFrom::Start(range_start)).unwrap();

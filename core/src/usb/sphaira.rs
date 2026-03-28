@@ -141,7 +141,7 @@ fn do_file_transfer_loop(
         let offset = send_header.get_offset();
         let size = send_header.get_size();
 
-        let _ = progress_tx.send(InstallProgressEvent::TotalOffsetBytes(offset));
+        let _ = progress_tx.send(InstallProgressEvent::AllFilesOffsetBytes(offset));
 
         if (offset == 0) && (size == 0) {
             debug!("file transfer complete!");
@@ -191,7 +191,7 @@ fn transfer_single_file(
         })?
         .len();
 
-    let _ = progress_tx.send(InstallProgressEvent::TotalLengthBytes(file_size));
+    let _ = progress_tx.send(InstallProgressEvent::AllFilesLengthBytes(file_size));
 
     let size_low_bits = file_size as u32;
     let size_high_bits = u32::from((file_size >> 32) as u16) | (flags << 16);

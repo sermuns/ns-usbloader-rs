@@ -16,7 +16,9 @@ use std::{
     },
 };
 
-use crate::tabs::{OngoingInstallation, Pick, StagedFiles, UsbProtocol, stage_picked};
+use crate::tabs::{
+    InstallProgress, OngoingInstallation, Pick, StagedFiles, UsbProtocol, stage_picked,
+};
 use crate::{app::add_toast, tabs::InstallType};
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)] // FIXME:
@@ -163,16 +165,54 @@ pub fn show(
     });
     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
         if let Some(ongoing_installation) = maybe_ongoing_installation {
-            ongoing_installation.handle_progress_events();
+            // TODO: figure out if we should use `while` or `if`?
+            // i guess we dont really need to consume all events, but could we
+            // possibly start lagging behidn if we only use if?
             ui.horizontal(|ui| {
                 if ui.button("❌ cancel").clicked() {
                     ongoing_installation.cancel.store(true, Ordering::Relaxed);
                 }
-                ui.add(ProgressBar::new(ongoing_installation.last_progress));
+                ui.add(ProgressBar::new(
+                    ongoing_installation.progress.all_files_ratio,
+                ));
             });
+            ui.add(
+                ProgressBar::new(ongoing_installation.progress.all_files_ratio)
+                    .text(&ongoing_installation.progress.current_file_name),
+            );
+
+            let Ok(progress_event) = ongoing_installation.progress_rx.try_recv() else {
+                return;
+            };
+            match progress_event {
+                InstallProgressEvent::CurrentFileName(file_name) => {
+                    ongoing_installation.progress.current_file_name = file_name;
+                }
+                InstallProgressEvent::AllFilesLengthBytes(length) => {
+                    ongoing_installation.progress.all_files_length_bytes = length;
+                    ongoing_installation.recalculate_all_files_progress();
+                }
+                InstallProgressEvent::AllFilesOffsetBytes(offset) => {
+                    ongoing_installation.progress.all_files_offset_bytes = offset;
+                    ongoing_installation.recalculate_all_files_progress();
+                }
+                InstallProgressEvent::CurrentFileLengthBytes(length) => {
+                    ongoing_installation.progress.current_file_length_bytes = length;
+                    ongoing_installation.recalculate_current_file_progress();
+                }
+                InstallProgressEvent::CurrentFileOffsetBytes(offset) => {
+                    ongoing_installation.progress.current_file_offset_bytes = offset;
+                    ongoing_installation.recalculate_current_file_progress();
+                }
+                InstallProgressEvent::Ended => {
+                    ongoing_installation.progress.all_files_ratio = 1.0;
+                    ongoing_installation.progress.current_file_ratio = 1.0;
+                    ongoing_installation.progress.ended = true;
+                }
+            }
 
             // thread is finished? take it!
-            if ongoing_installation.thread.is_finished() {
+            if ongoing_installation.progress.ended {
                 info!("install thread finished");
                 // FIXME: avoid expect. we know that it is Some..
                 let ongoing_installation = maybe_ongoing_installation
@@ -287,10 +327,8 @@ fn start_install(
 
     *maybe_ongoing_installation = Some(OngoingInstallation {
         progress_rx,
-        last_total_length_bytes: 1,
-        last_total_offset_bytes: 0,
-        last_progress: 0.0,
-        cancel,
+        progress: InstallProgress::default(),
         thread,
+        cancel,
     });
 }

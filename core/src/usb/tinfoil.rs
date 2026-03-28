@@ -59,7 +59,7 @@ pub fn file_range_command(
         );
     }
 
-    let _ = progress_tx.send(InstallProgressEvent::Message(game_path.to_string()));
+    let _ = progress_tx.send(InstallProgressEvent::CurrentFileName(game_path.to_string()));
 
     info!(
         "Range size: {}, Range offset: {}, Name len: {}, Name: {}",
@@ -72,14 +72,16 @@ pub fn file_range_command(
 
     if let Ok(metadata) = file.metadata() {
         let file_size = metadata.len();
-        let _ = progress_tx.send(InstallProgressEvent::TotalLengthBytes(file_size));
+        let _ = progress_tx.send(InstallProgressEvent::AllFilesLengthBytes(file_size));
     }
 
     let mut reader = BufReader::new(file);
 
     reader.seek(SeekFrom::Start(range_offset))?;
-    let _ = progress_tx.send(InstallProgressEvent::TotalOffsetBytes(range_offset));
-    let _ = progress_tx.send(InstallProgressEvent::FileLengthBytes(range_size as u64));
+    let _ = progress_tx.send(InstallProgressEvent::AllFilesOffsetBytes(range_offset));
+    let _ = progress_tx.send(InstallProgressEvent::CurrentFileLengthBytes(
+        range_size as u64,
+    ));
 
     let mut current_offset = 0;
     let end_offset = range_size;
@@ -100,7 +102,9 @@ pub fn file_range_command(
         debug!("sent {} bytes", read_size);
 
         current_offset += read_size;
-        progress_tx.send(InstallProgressEvent::FileOffsetBytes(current_offset as u64))?;
+        progress_tx.send(InstallProgressEvent::CurrentFileOffsetBytes(
+            current_offset as u64,
+        ))?;
     }
 
     Ok(())

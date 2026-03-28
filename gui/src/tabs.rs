@@ -1,6 +1,6 @@
 use egui_toast::{ToastKind, Toasts};
-use ironfoil_core::{InstallProgressEvent, InstallProgressReceiver, UsbProtocol};
-use log::{error, info};
+use ironfoil_core::{InstallProgressReceiver, UsbProtocol};
+use log::error;
 use serde::{Deserialize, Serialize};
 use std::{
     net::Ipv4Addr,
@@ -61,51 +61,48 @@ impl Default for InstallType {
 }
 
 #[derive(Debug)]
+struct InstallProgress {
+    current_file_name: String,
+    all_files_length_bytes: u64,
+    all_files_offset_bytes: u64,
+    all_files_ratio: f32,
+    current_file_length_bytes: u64,
+    current_file_offset_bytes: u64,
+    current_file_ratio: f32,
+    ended: bool,
+}
+
+impl Default for InstallProgress {
+    fn default() -> Self {
+        Self {
+            current_file_name: String::new(),
+            all_files_length_bytes: 1,
+            all_files_offset_bytes: 0,
+            all_files_ratio: 0.0,
+            current_file_length_bytes: 1,
+            current_file_offset_bytes: 0,
+            current_file_ratio: 0.0,
+            ended: false,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct OngoingInstallation {
     progress_rx: InstallProgressReceiver,
-    last_total_length_bytes: u64,
-    last_total_offset_bytes: u64,
-    last_progress: f32,
+    progress: InstallProgress,
     thread: JoinHandle<color_eyre::Result<()>>,
     cancel: Arc<AtomicBool>,
 }
 
 impl OngoingInstallation {
-    fn recalculate_progress(&mut self) {
-        // TODO: just use NonZeroU64 for totala length...
-        if self.last_total_length_bytes == 0 {
-            self.last_progress = 0.;
-        } else {
-            self.last_progress =
-                self.last_total_offset_bytes as f32 / self.last_total_length_bytes as f32;
-        }
+    fn recalculate_all_files_progress(&mut self) {
+        self.progress.all_files_ratio = self.progress.all_files_offset_bytes as f32
+            / self.progress.all_files_length_bytes as f32;
     }
-    pub fn handle_progress_events(&mut self) {
-        // TODO: figure out if we should use `while` or `if`?
-        // i guess we dont really need to consume all events, but could we
-        // possibly start lagging behidn if we only use if?
-        let Ok(event) = self.progress_rx.try_recv() else {
-            return;
-        };
-        match event {
-            InstallProgressEvent::Message(message) => {
-                info!("install progress message: {}", message);
-            }
-            InstallProgressEvent::TotalLengthBytes(total_length) => {
-                self.last_total_length_bytes = total_length;
-                self.recalculate_progress();
-            }
-            InstallProgressEvent::TotalOffsetBytes(total_offset) => {
-                self.last_total_offset_bytes = total_offset;
-                self.recalculate_progress();
-            }
-            InstallProgressEvent::FileLengthBytes(_content_length) => {
-                // TODO:
-            }
-            InstallProgressEvent::FileOffsetBytes(_content_offset) => {
-                // TODO:
-            }
-        }
+    fn recalculate_current_file_progress(&mut self) {
+        self.progress.current_file_ratio = self.progress.current_file_offset_bytes as f32
+            / self.progress.current_file_length_bytes as f32;
     }
 }
 

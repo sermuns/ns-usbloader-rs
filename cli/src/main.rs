@@ -122,29 +122,30 @@ where
     let total_pb = ProgressBar::no_length().with_style(
         ProgressStyle::with_template("ETA: {eta} ({binary_bytes_per_sec}) {wide_bar} {binary_bytes} of {binary_total_bytes} sent").unwrap(),
     );
-    let content_pb = ProgressBar::no_length();
+    let file_pb = ProgressBar::no_length().with_style(
+        ProgressStyle::with_template(
+            "{msg} ({binary_bytes_per_sec}) {wide_bar} {binary_bytes} of {binary_total_bytes} sent",
+        )
+        .unwrap(),
+    );
 
     let game_paths = read_game_paths(game_backup_path, recurse)?;
 
     let (progress_tx, progress_rx) = mpsc::channel::<InstallProgressEvent>();
 
-    let thread = std::thread::spawn(move || install_closure(game_paths, progress_tx));
+    let install_thread = std::thread::spawn(move || install_closure(game_paths, progress_tx));
 
-    while !thread.is_finished() {
-        if let Ok(progress_event) = progress_rx.try_recv() {
-            match progress_event {
-                InstallProgressEvent::Message(msg) => total_pb.set_message(msg),
-                InstallProgressEvent::TotalOffsetBytes(offset) => total_pb.set_position(offset),
-                InstallProgressEvent::TotalLengthBytes(length) => total_pb.set_length(length),
-                InstallProgressEvent::FileLengthBytes(length) => content_pb.set_length(length),
-                InstallProgressEvent::FileOffsetBytes(offset) => {
-                    content_pb.set_position(offset);
-                    total_pb.inc(offset);
-                }
-            }
+    loop {
+        match progress_rx.recv()? {
+            InstallProgressEvent::AllFilesLengthBytes(length) => total_pb.set_length(length),
+            InstallProgressEvent::AllFilesOffsetBytes(offset) => total_pb.set_position(offset),
+            InstallProgressEvent::CurrentFileLengthBytes(length) => file_pb.set_length(length),
+            InstallProgressEvent::CurrentFileOffsetBytes(offset) => file_pb.set_position(offset),
+            InstallProgressEvent::CurrentFileName(name) => file_pb.set_message(name),
+            InstallProgressEvent::Ended => break,
         }
     }
 
-    thread.join().expect("joining install thread")?;
+    install_thread.join().expect("joining install thread")?;
     Ok(())
 }
