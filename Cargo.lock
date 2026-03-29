@@ -1514,7 +1514,6 @@ version = "0.4.0"
 dependencies = [
  "color-eyre",
  "crc32c",
- "crc32fast",
  "log",
  "nusb",
  "percent-encoding",
