@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>{{ config.title }}</title>
+		<link
+			rel="icon"
+			type="image/svg"
+			href="{{ get_url(path='media/icon-dark.svg') }}"
+		/>
+		<link rel="stylesheet" href="{{ get_url(path='style.css') }}" />
+		<meta name="description" content="{{ config.description }}" />
+	</head>
+
+	<body>
+		<main>{% block content %} {% endblock content %}</main>
+	</body>
+</html>

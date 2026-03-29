@@ -1,0 +1,28 @@
+:root {
+	--background-color: hsl(159, 0%, 11%);
+	--text-color: hsl(159, 0%, 95%);
+	--accent-color: hsl(197, 100%, 25.1%);
+
+	background-color: var(--background-color);
+	color: var(--text-color);
+
+	font-family: sans-serif;
+}
+
+body {
+	margin: 0;
+	box-sizing: border-box;
+	min-height: 100vh;
+}
+
+main {
+	width: min(90ch, 100%);
+	margin: auto;
+	img {
+		max-width: 100%;
+	}
+}
+
+a {
+	color: var(--accent-color);
+}
