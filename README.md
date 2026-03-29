@@ -65,7 +65,9 @@ Alternatives:
 
 ## Usage for the CLI
 
-```present cargo run --bin ironfoil -- -h
+### `ironfoil --help`
+
+```present cargo run -p ironfoil -- -h
 Transfer to NS title installers from the command-line
 
 Usage: ironfoil <COMMAND>
@@ -79,6 +81,52 @@ Commands:
 Options:
   -h, --help     Print help
   -V, --version  Print version
+```
+
+### `ironfoil usb --help`
+
+```present cargo run -p ironfoil -- usb -h
+Transfer over USB
+
+Usage: ironfoil usb [OPTIONS] <GAME_BACKUP_PATH>
+
+Arguments:
+  <GAME_BACKUP_PATH>  Path to a game backup file or directory containing game backup files
+
+Options:
+  -r, --recurse  Whether to recursively look for files (only for directories)
+      --sphaira  If transferring to Sphaira homebrew menu
+  -h, --help     Print help
+```
+
+### `ironfoil network --help`
+
+```present cargo run -p ironfoil -- network -h
+Transfer over network
+
+Usage: ironfoil network [OPTIONS] <GAME_BACKUP_PATH> <TARGET_IP>
+
+Arguments:
+  <GAME_BACKUP_PATH>  Path to a game backup file or directory containing game backup files
+  <TARGET_IP>         The IP address of the Nintendo Switch
+
+Options:
+  -r, --recurse  Whether to recursively look for files (only for directories)
+  -h, --help     Print help
+```
+
+### `ironfoil rcm --help`
+
+```present cargo run -p ironfoil -- rcm -h
+Inject RCM payload
+
+Usage: ironfoil rcm <PAYLOAD_PATH>
+
+Arguments:
+  <PAYLOAD_PATH>  Path to the RCM payload file
+
+Options:
+  -h, --help  Print help
 ```
 
 ## License
