@@ -55,13 +55,17 @@ pub enum SendHeaderError {
 /// read send header and check magic
 pub fn get_send_header(usb_reader: &mut impl Read) -> Result<SendHeader, SendHeaderError> {
     let mut response = [0u8; PACKET_SIZE];
-    usb_reader.read_exact(&mut response).map_err(|e| {
-        if e.kind() == std::io::ErrorKind::ConnectionAborted {
-            SendHeaderError::Disconnected
-        } else {
-            SendHeaderError::OtherIo(e)
-        }
-    })?;
+    usb_reader
+        .read_exact(&mut response)
+        .map_err(|e| match e.kind() {
+            std::io::ErrorKind::ConnectionAborted | std::io::ErrorKind::TimedOut => {
+                SendHeaderError::Disconnected
+            }
+            _ => {
+                error!("{:?}", e);
+                SendHeaderError::OtherIo(e)
+            }
+        })?;
 
     let mut chunks = response.chunks(4);
 
@@ -268,15 +272,15 @@ pub fn initiate_transfer(
     paths_with_newlines_string_length: u32,
     game_paths: &[PathBuf],
 ) -> color_eyre::Result<()> {
-    // just validate
+    // only validate, don't care about response
     let _ = get_send_header(usb_reader).wrap_err(
-                [
-                    "Failed to perform initial handshake with Sphaira.",
-                    "Ensure Sphaira is open on the Nintendo Switch, and in the menu 'USB Install'.",
-                    "If you are trying to transfer to Awoo Installer or CyberFoil, you need to change to that USB install option.",
-                ]
-                .join("\n"),
-            )?;
+        [
+            "Failed to perform initial handshake with Sphaira.",
+            "Ensure Sphaira is open on the Nintendo Switch, and in the menu 'USB Install'.",
+            "If you are trying to transfer to Awoo Installer or CyberFoil, you need to change to that USB install option.",
+        ]
+        .join("\n"),
+    )?;
     send_result(
         usb_writer,
         RESULT_OK,
