@@ -234,3 +234,24 @@ pub fn initiate_transfer(
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::*;
+
+    #[rstest]
+    #[case(0)]
+    #[case(1)]
+    #[case(0x1234_5678)]
+    #[case(0xFFFF_FFFF)]
+    fn send_response_header_simple(#[case] range_size: usize) {
+        let mut buf = Vec::new();
+        send_response_header(&mut buf, range_size).unwrap();
+        assert_eq!(&buf[..4], b"TUC0");
+        assert_eq!(&buf[4..8], &command_direction::RESPONSE);
+        assert_eq!(&buf[8..12], &command::FILE_RANGE);
+        assert_eq!(&buf[12..20], &range_size.to_le_bytes());
+        assert_eq!(&buf[20..32], &[0u8; 0xC]);
+    }
+}
