@@ -22,7 +22,9 @@ pub enum Tab {
     Install {
         recurse: bool,
         install_type: InstallType,
-        #[serde(skip)]
+        // #[serde(skip)]
+        // serialize only on debug
+        #[cfg_attr(not(debug_assertions), serde(skip))]
         staged_files: StagedFiles,
         #[serde(skip)]
         maybe_ongoing_installation: Option<OngoingInstallation>,
@@ -55,7 +57,7 @@ impl InstallType {
 impl Default for InstallType {
     fn default() -> Self {
         Self::Usb {
-            protocol: UsbProtocol::TinFoil,
+            protocol: UsbProtocol::default(),
         }
     }
 }
@@ -106,7 +108,7 @@ impl OngoingInstallation {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Serialize, Deserialize)]
 pub struct StagedFiles {
     files: Vec<StagedFile>,
     total_file_size: u64,
@@ -185,7 +187,7 @@ impl StagedFiles {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 struct StagedFile {
     path: PathBuf,
     file_size: u64,

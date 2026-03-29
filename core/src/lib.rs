@@ -21,8 +21,9 @@ pub enum InstallProgressEvent {
 pub type InstallProgressSender = std::sync::mpsc::Sender<InstallProgressEvent>;
 pub type InstallProgressReceiver = std::sync::mpsc::Receiver<InstallProgressEvent>;
 
-#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub enum UsbProtocol {
+    #[default]
     TinFoil,
     Sphaira,
 }
