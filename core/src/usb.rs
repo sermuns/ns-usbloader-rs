@@ -1,4 +1,4 @@
-use color_eyre::eyre::{ContextCompat, eyre};
+use color_eyre::eyre::{Context, ContextCompat, eyre};
 use log::info;
 use nusb::{
     MaybeFuture, list_devices,
@@ -11,12 +11,22 @@ use crate::{InstallProgressEvent, InstallProgressSender, UsbProtocol};
 mod sphaira;
 mod tinfoil;
 
+struct UsbInstallEndedGuard<'a> {
+    tx: &'a InstallProgressSender,
+}
+impl Drop for UsbInstallEndedGuard<'_> {
+    fn drop(&mut self) {
+        let _ = self.tx.send(InstallProgressEvent::Ended);
+    }
+}
+
 pub fn perform_usb_install(
     game_paths: &[PathBuf],
     progress_tx: InstallProgressSender,
     usb_protocol: UsbProtocol,
     cancel: Option<&AtomicBool>,
 ) -> color_eyre::Result<()> {
+    let _ended_guard = UsbInstallEndedGuard { tx: &progress_tx };
     let device_info = list_devices()
         .wait()?
         .find(|dev| dev.vendor_id() == 0x57e && dev.product_id() == 0x3000)
@@ -59,8 +69,10 @@ pub fn perform_usb_install(
 
     let mut ep_in = interface.endpoint::<Bulk, In>(0x81)?;
     ep_in.clear_halt().wait()?;
-    const USB_READER_TIMEOUT: Duration = Duration::from_mins(5);
-    let mut usb_reader = ep_in.reader(512).with_read_timeout(USB_READER_TIMEOUT);
+
+    let mut usb_reader = ep_in
+        .reader(512)
+        .with_read_timeout(Duration::from_millis(500));
 
     let paths_with_newlines_string_length: u32 = game_paths
         .iter()
@@ -104,15 +116,14 @@ pub fn perform_usb_install(
             )
             .inspect_err(|_| {
                 let _ = sphaira::send_result(&mut usb_writer, sphaira::RESULT_ERROR, None, None);
-            })?;
+            })
+            .wrap_err("Unexpected error during SB transfer")?;
         }
         UsbProtocol::TinFoil => {
             info!("starting Tinfoil USB install.");
             tinfoil::do_workloop(usb_reader, usb_writer, cancel, game_paths, &progress_tx)?;
         }
     }
-
-    let _ = progress_tx.send(InstallProgressEvent::Ended);
 
     Ok(())
 }
