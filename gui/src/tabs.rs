@@ -169,6 +169,10 @@ impl StagedFiles {
         self.files.len()
     }
 
+    fn human_size(&self) -> String {
+        humansize::format_size(self.total_file_size, humansize::BINARY)
+    }
+
     fn selected_count(&self) -> usize {
         self.files
             .iter()

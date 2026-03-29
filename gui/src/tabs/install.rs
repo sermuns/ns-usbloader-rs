@@ -120,7 +120,7 @@ pub fn show(
         }
 
         // FIXME: so fucking stupid... DONT USE HARDCODE FOR HEIGHT OF OTHER SHIT
-        ui.set_height(ui.available_height() - 18. * 2.);
+        ui.set_height(ui.available_height() - 19. * 2.);
 
         if staged_files.has_any_selected() {
             if ui.button("Deselect all").clicked() {
@@ -163,127 +163,159 @@ pub fn show(
                 });
             });
     });
-    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-        if let Some(ongoing_installation) = maybe_ongoing_installation {
-            // TODO: figure out if we should use `while` or `if`?
-            // i guess we dont really need to consume all events, but could we
-            // possibly start lagging behidn if we only use if?
-            ui.horizontal(|ui| {
+    // TODO: figure out if we should use `while` or `if`?
+    // i guess we dont really need to consume all events, but could we
+    // possibly start lagging behidn if we only use if?
+    if let Some(ongoing_installation) = maybe_ongoing_installation {
+        ui.allocate_ui_with_layout(
+            (ui.available_width(), 18.).into(),
+            Layout::right_to_left(Align::TOP),
+            |ui| {
                 if ui.button("❌ cancel").clicked() {
                     ongoing_installation.cancel.store(true, Ordering::Relaxed);
                 }
-                ui.add(ProgressBar::new(
-                    ongoing_installation.progress.all_files_ratio,
-                ));
-            });
-            ui.add(
-                ProgressBar::new(ongoing_installation.progress.all_files_ratio)
-                    .text(&ongoing_installation.progress.current_file_name),
-            );
-
-            let Ok(progress_event) = ongoing_installation.progress_rx.try_recv() else {
-                return;
-            };
-            match progress_event {
-                InstallProgressEvent::CurrentFileName(file_name) => {
-                    ongoing_installation.progress.current_file_name = file_name;
-                }
-                InstallProgressEvent::AllFilesLengthBytes(length) => {
-                    ongoing_installation.progress.all_files_length_bytes = length;
-                    ongoing_installation.recalculate_all_files_progress();
-                }
-                InstallProgressEvent::AllFilesOffsetBytes(offset) => {
-                    ongoing_installation.progress.all_files_offset_bytes = offset;
-                    ongoing_installation.recalculate_all_files_progress();
-                }
-                InstallProgressEvent::CurrentFileLengthBytes(length) => {
-                    ongoing_installation.progress.current_file_length_bytes = length;
-                    ongoing_installation.recalculate_current_file_progress();
-                }
-                InstallProgressEvent::CurrentFileOffsetBytes(offset) => {
-                    ongoing_installation.progress.current_file_offset_bytes = offset;
-                    ongoing_installation.recalculate_current_file_progress();
-                }
-                InstallProgressEvent::Ended => {
-                    ongoing_installation.progress.all_files_ratio = 1.0;
-                    ongoing_installation.progress.current_file_ratio = 1.0;
-                    ongoing_installation.progress.ended = true;
-                }
-            }
-
-            // thread is finished? take it!
-            if ongoing_installation.progress.ended {
-                info!("install thread finished");
-                // FIXME: avoid expect. we know that it is Some..
-                let ongoing_installation = maybe_ongoing_installation
-                    .take()
-                    .expect("there is an ongoing installation");
-
-                if ongoing_installation.cancel.load(Ordering::Relaxed) {
-                    info!("installation was cancelled");
-                    add_toast(toasts, ToastKind::Info, "Installation cancelled.");
-                    return;
-                }
-
-                match ongoing_installation.thread.join() {
-                    Ok(Ok(())) => {
-                        info!("installation thread finished with success");
-                        add_toast(
-                            toasts,
-                            ToastKind::Success,
-                            "Installation completed successfully!",
-                        );
-                    }
-                    Ok(Err(e)) => {
-                        error!("installation thread finished with error:\n{:?}", e);
-                        add_toast(
-                            toasts,
-                            ToastKind::Error,
-                            format!("Installation failed:\n{}", e),
-                        );
-                    }
-                    Err(e) => {
-                        error!("installation thread panicked:\n{:?}", e);
-                        add_toast(
-                            toasts,
-                            ToastKind::Error,
-                            format!("Installation crashed:\n{:?}", e),
-                        );
-                    }
-                }
-            }
-        } else if !staged_files.is_empty() {
-            let game_paths: Vec<_> = staged_files
-                .files
-                .iter()
-                .filter_map(|staged_file| staged_file.selected.then_some(staged_file.path.clone()))
-                .collect();
-
-            if ui
-                .button(match install_type {
-                    InstallType::Usb { .. } => "🔌 install over USB!",
-                    InstallType::Network => "🖧 install over network!",
-                })
-                .clicked()
-            {
-                start_install(
-                    game_paths,
-                    install_type,
-                    *target_ip,
-                    maybe_ongoing_installation,
-                    toasts,
+                ui.add(
+                    ProgressBar::new(ongoing_installation.progress.all_files_ratio).text(format!(
+                        "Total progress | {}/{}",
+                        humansize::format_size(
+                            ongoing_installation.progress.all_files_offset_bytes,
+                            humansize::BINARY,
+                        ),
+                        humansize::format_size(
+                            ongoing_installation.progress.all_files_length_bytes,
+                            humansize::BINARY,
+                        )
+                    )),
                 );
+            },
+        );
+        ui.add(
+            ProgressBar::new(ongoing_installation.progress.current_file_ratio)
+                .show_percentage()
+                .text(format!(
+                    "{} | {}/{}",
+                    ongoing_installation.progress.current_file_name,
+                    humansize::format_size(
+                        ongoing_installation.progress.current_file_offset_bytes,
+                        humansize::BINARY,
+                    ),
+                    humansize::format_size(
+                        ongoing_installation.progress.current_file_length_bytes,
+                        humansize::BINARY,
+                    )
+                )),
+        );
+
+        let Ok(progress_event) = ongoing_installation.progress_rx.try_recv() else {
+            return;
+        };
+        match progress_event {
+            InstallProgressEvent::CurrentFileName(file_name) => {
+                ongoing_installation.progress.current_file_name = file_name;
             }
-            if ui.button("❌ remove from list").clicked() {
-                staged_files.remove_selected();
+            InstallProgressEvent::AllFilesLengthBytes(length) => {
+                ongoing_installation.progress.all_files_length_bytes = length;
+                ongoing_installation.recalculate_all_files_progress();
             }
-            ui.weak(format!(
-                "{} selected ({})",
-                staged_files.selected_count(),
-                staged_files.selected_human_size(),
-            ));
+            InstallProgressEvent::AllFilesOffsetBytes(offset) => {
+                ongoing_installation.progress.all_files_offset_bytes = offset;
+                ongoing_installation.recalculate_all_files_progress();
+            }
+            InstallProgressEvent::CurrentFileLengthBytes(length) => {
+                ongoing_installation.progress.current_file_length_bytes = length;
+                ongoing_installation.recalculate_current_file_progress();
+            }
+            InstallProgressEvent::CurrentFileOffsetBytes(offset) => {
+                ongoing_installation.progress.current_file_offset_bytes = offset;
+                ongoing_installation.recalculate_current_file_progress();
+            }
+            InstallProgressEvent::Ended => {
+                ongoing_installation.progress.all_files_ratio = 1.0;
+                ongoing_installation.progress.current_file_ratio = 1.0;
+                ongoing_installation.progress.ended = true;
+            }
         }
-    });
+
+        // thread is finished? take it!
+        if ongoing_installation.progress.ended {
+            // FIXME: avoid expect. we know that it is Some..
+            let ongoing_installation = maybe_ongoing_installation
+                .take()
+                .expect("there is an ongoing installation");
+
+            if ongoing_installation.cancel.load(Ordering::Relaxed) {
+                info!("installation was cancelled");
+                add_toast(toasts, ToastKind::Info, "Installation cancelled.");
+                return;
+            }
+
+            match ongoing_installation.thread.join() {
+                Ok(Ok(())) => {
+                    info!("installation thread finished with success");
+                    add_toast(
+                        toasts,
+                        ToastKind::Success,
+                        "Installation completed successfully!",
+                    );
+                }
+                Ok(Err(e)) => {
+                    error!("installation thread finished with error:\n{:?}", e);
+                    add_toast(
+                        toasts,
+                        ToastKind::Error,
+                        format!("Installation failed:\n{}", e),
+                    );
+                }
+                Err(e) => {
+                    error!("installation thread panicked:\n{:?}", e);
+                    add_toast(
+                        toasts,
+                        ToastKind::Error,
+                        format!("Installation crashed:\n{:?}", e),
+                    );
+                }
+            }
+        }
+    } else if !staged_files.is_empty() {
+        let game_paths: Vec<_> = staged_files
+            .files
+            .iter()
+            .filter_map(|staged_file| staged_file.selected.then_some(staged_file.path.clone()))
+            .collect();
+
+        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            ui.add_enabled_ui(staged_files.has_any_selected(), |ui| {
+                if ui
+                    .button(match install_type {
+                        InstallType::Usb { .. } => "🔌 install over USB!",
+                        InstallType::Network => "🖧 install over network!",
+                    })
+                    .clicked()
+                {
+                    start_install(
+                        game_paths,
+                        install_type,
+                        *target_ip,
+                        maybe_ongoing_installation,
+                        toasts,
+                    );
+                }
+                if ui.button("❌ remove selected from stage").clicked() {
+                    staged_files.remove_selected();
+                }
+                ui.weak(format!(
+                    "{} selected ({})",
+                    staged_files.selected_count(),
+                    staged_files.selected_human_size(),
+                ));
+                ui.weak(format!(
+                    "{} staged ({})",
+                    staged_files.count(),
+                    staged_files.human_size(),
+                ));
+            })
+        });
+    }
 }
 
 fn start_install(
