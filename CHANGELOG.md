@@ -1,6 +1,39 @@
 # Changelog
 
-## [0.3.1](https://github.com/sermuns/ironfoil/compare/v0.3.0..0.3.1) - 2026-03-27
+## [0.4.0](https://github.com/sermuns/ironfoil/compare/v0.3.1..0.4.0) - 2026-03-29
+
+### 🚀 Features
+
+- **(gui)** progress bars for total and per-file by @sermuns in [9b7ded7](https://github.com/sermuns/ironfoil/commit/9b7ded7b4cf1178f1ec5282728c7781242448a84)
+- **(gui)** less repaint churning by only repaininting every 100 ms by @sermuns in [9911408](https://github.com/sermuns/ironfoil/commit/991140819db06bfb2d773afbef7e28a1f2719db0)
+
+### 🐛 Bug Fixes
+
+- **(core)** send Ended event everytime installation ends, even in failure by @sermuns in [118db9c](https://github.com/sermuns/ironfoil/commit/118db9ccbd67d833cbb501b3a769a743193c9f23)
+- **(core)** better error message for timeout by @sermuns in [e8c8204](https://github.com/sermuns/ironfoil/commit/e8c8204ffa26ca81396bf791693a0279fe1bd175)
+- **(core)** more accurate errors by @sermuns in [da024b2](https://github.com/sermuns/ironfoil/commit/da024b2071fb34ca0b2f75aff39ca714774837ab)
+
+### 🚜 Refactor
+
+- **(core)** combine error handling in http server by @sermuns in [c1ae25c](https://github.com/sermuns/ironfoil/commit/c1ae25c169e559c3e918a458fa93255adfea4489)
+- remove Arc nonsense where it's not needed by @sermuns in [a83e99d](https://github.com/sermuns/ironfoil/commit/a83e99d9a1ac12ee69b3f51a8dcc650974a63917)
+- move UsbProtocol into core, use it instead of for_sphaira bool by @sermuns in [efec4e6](https://github.com/sermuns/ironfoil/commit/efec4e67da3183b1e0c93b75ef30781a2cff35db)
+- create a dedicated InstallProgress enum. less CPU churning on CLI, still need to fix GUI.. by @sermuns in [3a5930d](https://github.com/sermuns/ironfoil/commit/3a5930d9d40e4a1eae30ad50321da747ca296909)
+- use high-level Read/Write syntax for USB transfers. fix progress reporting. by @sermuns in [f928f09](https://github.com/sermuns/ironfoil/commit/f928f09a27f2de2949e0b3c109a56d8dcd66e0cf)
+- make tinfoil install default by @sermuns in [7d02080](https://github.com/sermuns/ironfoil/commit/7d02080ad1fd6a9b78124dff35f45037abbfb53a)
+
+### 📚 Documentation
+
+- **(cli)** update demo gif by @sermuns in [552a0c1](https://github.com/sermuns/ironfoil/commit/552a0c1824958e8a3fa25521676e90da096b977f)
+- **(gui)** update screenshots by @sermuns in [1ecf844](https://github.com/sermuns/ironfoil/commit/1ecf844e88ee44a70b66eaf0e1b097b368a14ce7)
+- **(gui)** add thin variant of screenshot1 by @sermuns in [38f6bf2](https://github.com/sermuns/ironfoil/commit/38f6bf260d4746ef1c86bd398262ad686a677fa9)
+
+### ⚙️ Miscellaneous Tasks
+
+- **(gui)** minor error reword by @sermuns in [b4452e8](https://github.com/sermuns/ironfoil/commit/b4452e8cf8bad06097f5689870d1286084ab4b76)
+- satisfy/configure clippy by @sermuns in [0fd126f](https://github.com/sermuns/ironfoil/commit/0fd126f5a7a4d567f15441649bd56974c130304a)
+- release v0.4.0 by Samuel Åkesson in [b3bbc21](https://github.com/sermuns/ironfoil/commit/b3bbc2128047d83133b7cbd296b33340fa93e1d5)
+## [v0.3.1](https://github.com/sermuns/ironfoil/compare/v0.3.0..v0.3.1) - 2026-03-27
 
 ### 🚀 Features
 
@@ -31,7 +64,7 @@
 - add cargo fmt precommit by @sermuns in [360e2df](https://github.com/sermuns/ironfoil/commit/360e2df4222d2f017c9cec87f2790e2502da4e9e)
 - add pedantic clippy linting by @sermuns in [4aa637f](https://github.com/sermuns/ironfoil/commit/4aa637f676478e396f247abf7648f691395ee6b6)
 - allow override version in release just recipe by @sermuns in [885e160](https://github.com/sermuns/ironfoil/commit/885e160cc20becdf33895a5bcc84a0fdecee9ec1)
-- release v0.3.1 by Samuel Åkesson in [6bcf48b](https://github.com/sermuns/ironfoil/commit/6bcf48b0854bbbc4a04405dac983acb54d23c90e)
+- release v0.3.1 by @sermuns in [252d599](https://github.com/sermuns/ironfoil/commit/252d5992ebdf38ed5c9c08259c69a97c9499e69e)
 ## [v0.3.0](https://github.com/sermuns/ironfoil/compare/v0.2.1..v0.3.0) - 2026-03-26
 
 ### 🚀 Features
