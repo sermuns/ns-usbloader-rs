@@ -47,12 +47,12 @@ fn serve_http(
     while run_http_server.load(Ordering::Relaxed) {
         let (mut stream, _addr) = match listener.accept() {
             Ok(tuple) => tuple,
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                thread::sleep(Duration::from_millis(100));
-                continue;
-            }
             Err(e) => {
-                error!("error accepting incoming HTTP connection: {:?}", e);
+                if e.kind() == std::io::ErrorKind::WouldBlock {
+                    thread::sleep(Duration::from_millis(100));
+                } else {
+                    error!("error accepting incoming HTTP connection: {:?}", e);
+                }
                 continue;
             }
         };
