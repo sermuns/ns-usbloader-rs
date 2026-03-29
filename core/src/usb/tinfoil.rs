@@ -211,7 +211,16 @@ pub fn initiate_transfer(
     game_paths: &[PathBuf],
 ) -> color_eyre::Result<()> {
     usb_writer.write_all(b"TUL0")?;
-    usb_writer.flush()?;
+    if let Err(e) = usb_writer.flush()
+        && e.kind() == std::io::ErrorKind::TimedOut
+    {
+        bail!([
+            "Failed to perform initial handshake with Sphaira.",
+            "Ensure Awoo/CyberFoil is open on the Nintendo Switch",
+            "and in the 'Install over USB'/'Install from NS-USBloader' menu.",
+            "If you are trying to transfer to Sphaira, you need to change to that USB install option.",
+        ].join("\n"));
+    }
 
     usb_writer.write_all(&paths_with_newlines_string_length.to_le_bytes())?;
     usb_writer.flush()?;
