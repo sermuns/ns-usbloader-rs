@@ -117,11 +117,12 @@ pub fn perform_usb_install(
             .inspect_err(|_| {
                 let _ = sphaira::send_result(&mut usb_writer, sphaira::RESULT_ERROR, None, None);
             })
-            .wrap_err("Unexpected error during SB transfer")?;
+            .wrap_err("Unexpected error during Sphaira USB install")?;
         }
         UsbProtocol::TinFoil => {
             info!("starting Tinfoil USB install.");
-            tinfoil::do_workloop(usb_reader, usb_writer, cancel, game_paths, &progress_tx)?;
+            tinfoil::do_workloop(usb_reader, usb_writer, cancel, game_paths, &progress_tx)
+                .wrap_err("Unexpected error during Tinfoil USB install.")?;
         }
     }
 
