@@ -294,3 +294,46 @@ pub fn initiate_transfer(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::*;
+
+    #[rstest]
+    #[case(RESULT_OK, None, None)]
+    #[case(RESULT_ERROR, None, None)]
+    #[case(RESULT_OK, Some(123), None)]
+    #[case(RESULT_ERROR, None, Some(u32::MAX))]
+    #[case(RESULT_OK, Some(u32::MAX), Some(u32::MAX))]
+    fn send_result_good(#[case] result: u32, #[case] arg3: Option<u32>, #[case] arg4: Option<u32>) {
+        let expected_crc32c = crc32c::crc32c(
+            &[
+                EXPECTED_MAGIC,
+                result,
+                arg3.unwrap_or(0),
+                arg4.unwrap_or(0),
+                0,
+            ]
+            .map(u32::to_le_bytes)
+            .concat(),
+        );
+
+        let mut usb_response = Vec::new();
+
+        assert!(send_result(&mut usb_response, result, arg3, arg4).is_ok());
+
+        assert_eq!(usb_response.len(), PACKET_SIZE);
+
+        let mut u32_chunks = usb_response
+            .chunks(4)
+            .map(|chunk| u32::from_le_bytes(chunk.try_into().unwrap()));
+
+        assert_eq!(u32_chunks.next().unwrap(), EXPECTED_MAGIC);
+        assert_eq!(u32_chunks.next().unwrap(), result);
+        assert_eq!(u32_chunks.next().unwrap(), arg3.unwrap_or(0));
+        assert_eq!(u32_chunks.next().unwrap(), arg4.unwrap_or(0));
+        assert_eq!(u32_chunks.next().unwrap(), 0);
+        assert_eq!(u32_chunks.next().unwrap(), expected_crc32c);
+    }
+}
