@@ -211,6 +211,10 @@ pub fn initiate_transfer(
     paths_with_newlines_string_length: u32,
     game_paths: &[PathBuf],
 ) -> color_eyre::Result<()> {
+    if game_paths.is_empty() {
+        bail!("no game paths provided for transfer");
+    }
+
     usb_writer.write_all(b"TUL0")?;
     if let Err(e) = usb_writer.flush()
         && e.kind() == std::io::ErrorKind::TimedOut
@@ -230,6 +234,12 @@ pub fn initiate_transfer(
     usb_writer.flush()?;
 
     for path in game_paths {
+        if path.is_dir() {
+            bail!(
+                "game path {} is a directory. only file paths are supported",
+                path.display()
+            );
+        }
         writeln!(usb_writer, "{}", path.to_str().unwrap())?;
         usb_writer.flush()?;
     }
@@ -246,13 +256,71 @@ mod tests {
     #[case(1)]
     #[case(0x1234_5678)]
     #[case(0xFFFF_FFFF)]
-    fn send_response_header_simple(#[case] range_size: usize) {
-        let mut buf = Vec::new();
-        send_response_header(&mut buf, range_size).unwrap();
-        assert_eq!(&buf[..4], b"TUC0");
-        assert_eq!(&buf[4..8], &command_direction::RESPONSE);
-        assert_eq!(&buf[8..12], &command::FILE_RANGE);
-        assert_eq!(&buf[12..20], &range_size.to_le_bytes());
-        assert_eq!(&buf[20..32], &[0u8; 0xC]);
+    fn send_response_header_good(#[case] range_size: usize) {
+        let mut usb_response = Vec::new();
+        send_response_header(&mut usb_response, range_size).unwrap();
+        assert_eq!(&usb_response[..4], b"TUC0");
+        assert_eq!(&usb_response[4..8], &command_direction::RESPONSE);
+        assert_eq!(&usb_response[8..12], &command::FILE_RANGE);
+        assert_eq!(&usb_response[12..20], &range_size.to_le_bytes());
+        assert_eq!(&usb_response[20..32], &[0u8; 0xC]);
+    }
+
+    #[rstest]
+    #[case(&["game1.nsp"].map(PathBuf::from))]
+    #[case(&["game1.nsp", "game2.nsp"].map(PathBuf::from))]
+    fn initiate_transfer_good(#[case] game_paths: &[PathBuf]) {
+        let mut usb_response = Vec::new();
+
+        let paths_with_newlines_string_length = game_paths
+            .iter()
+            .map(|p| p.to_str().unwrap().len() + 1)
+            .sum::<usize>() as u32;
+
+        assert!(
+            initiate_transfer(
+                &mut usb_response,
+                paths_with_newlines_string_length,
+                game_paths,
+            )
+            .is_ok()
+        );
+
+        assert_eq!(&usb_response[..4], b"TUL0");
+        assert_eq!(
+            &usb_response[4..8],
+            &paths_with_newlines_string_length.to_le_bytes()
+        );
+        assert_eq!(&usb_response[8..16], &[0u8; 8]);
+
+        for path in game_paths {
+            let path_with_newline = format!("{}\n", path.to_str().unwrap());
+            assert!(
+                usb_response
+                    .windows(path_with_newline.len())
+                    .any(|window| window == path_with_newline.as_bytes())
+            );
+        }
+    }
+
+    #[rstest]
+    #[case(&[])]
+    #[case(&["."].map(PathBuf::from))]
+    fn initiate_transfer_bad(#[case] game_paths: &[PathBuf]) {
+        let mut usb_response = Vec::new();
+
+        let paths_with_newlines_string_length = game_paths
+            .iter()
+            .map(|p| p.to_str().unwrap().len() + 1)
+            .sum::<usize>() as u32;
+
+        assert!(
+            initiate_transfer(
+                &mut usb_response,
+                paths_with_newlines_string_length,
+                game_paths,
+            )
+            .is_err()
+        );
     }
 }
