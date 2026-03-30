@@ -25,6 +25,7 @@ const FLAG_NONE: u32 = 0;
 #[allow(unused)]
 const FLAG_STREAM: u32 = 1;
 
+#[derive(Debug)]
 pub struct SendHeader {
     arg2: u32,
     arg3: u32,
@@ -335,5 +336,50 @@ mod tests {
         assert_eq!(u32_chunks.next().unwrap(), arg4.unwrap_or(0));
         assert_eq!(u32_chunks.next().unwrap(), 0);
         assert_eq!(u32_chunks.next().unwrap(), expected_crc32c);
+    }
+
+    #[rstest]
+    #[case(0, 0, 0)]
+    #[case(123, 456, 789)]
+    #[case(u32::MAX, u32::MAX, u32::MAX)]
+    fn get_send_header_good(#[case] arg2: u32, #[case] arg3: u32, #[case] arg4: u32) {
+        let mut packet = [0u8; PACKET_SIZE];
+        packet[..4].copy_from_slice(&EXPECTED_MAGIC.to_le_bytes());
+        packet[4..8].copy_from_slice(&arg2.to_le_bytes());
+        packet[8..12].copy_from_slice(&arg3.to_le_bytes());
+        packet[12..16].copy_from_slice(&arg4.to_le_bytes());
+        let crc32c = crc32c::crc32c(&packet[0..4 * 5]);
+        packet[4 * 5..4 * 6].copy_from_slice(&crc32c.to_le_bytes());
+
+        let mut mock_usb = std::io::Cursor::new(packet);
+        let header = get_send_header(&mut mock_usb).unwrap();
+        assert_eq!(header.arg2, arg2);
+        assert_eq!(header.arg3, arg3);
+        assert_eq!(header.arg4, arg4);
+    }
+
+    #[rstest]
+    fn get_send_header_bad_invalid_magic() {
+        let mut packet = [0u8; PACKET_SIZE];
+        let crc32c = crc32c::crc32c(&packet[0..4 * 5]);
+        packet[4 * 5..4 * 6].copy_from_slice(&crc32c.to_le_bytes());
+
+        let mut mock_usb = std::io::Cursor::new(packet);
+        assert!(matches!(
+            get_send_header(&mut mock_usb).unwrap_err(),
+            SendHeaderError::InvalidMagic
+        ));
+    }
+
+    #[rstest]
+    fn get_send_header_bad_invalid_crc32c() {
+        let mut packet = [0u8; PACKET_SIZE];
+        packet[..4].copy_from_slice(&EXPECTED_MAGIC.to_le_bytes());
+
+        let mut mock_usb = std::io::Cursor::new(packet);
+        assert!(matches!(
+            get_send_header(&mut mock_usb).unwrap_err(),
+            SendHeaderError::InvalidCrc32c
+        ));
     }
 }
