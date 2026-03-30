@@ -255,7 +255,7 @@ mod tests {
     #[case(0)]
     #[case(1)]
     #[case(0x1234_5678)]
-    #[case(0xFFFF_FFFF)]
+    #[case(usize::MAX)]
     fn send_response_header_good(#[case] range_size: usize) {
         let mut usb_response = Vec::new();
         send_response_header(&mut usb_response, range_size).unwrap();
