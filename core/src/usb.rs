@@ -60,7 +60,7 @@ pub fn perform_usb_install(
 
     let mut ep_out = interface.endpoint::<Bulk, Out>(0x01)?;
     ep_out.clear_halt().wait()?;
-    const USB_WRITER_BUFFER_SIZE_BYTES: usize = 2 ^ 20;
+    const USB_WRITER_BUFFER_SIZE_BYTES: usize = 2usize.pow(20);
     const USB_WRITER_TIMEOUT: Duration = Duration::from_millis(500);
     let mut usb_writer = ep_out
         .writer(USB_WRITER_BUFFER_SIZE_BYTES)
