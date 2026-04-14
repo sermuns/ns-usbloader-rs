@@ -69,9 +69,7 @@ pub fn perform_usb_install(
     let mut ep_in = interface.endpoint::<Bulk, In>(0x81)?;
     ep_in.clear_halt().wait()?;
 
-    let mut usb_reader = ep_in
-        .reader(512)
-        .with_read_timeout(Duration::from_millis(500));
+    let mut usb_reader = ep_in.reader(512).with_read_timeout(Duration::from_mins(5));
 
     let paths_with_newlines_string_length: u32 = game_paths
         .iter()
