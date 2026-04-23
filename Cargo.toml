@@ -37,7 +37,7 @@ debug = false
 panic = "unwind"
 lto = true
 codegen-units = 1
-strip = true
+strip = false
 
 [profile.dist]
 inherits = "release"
