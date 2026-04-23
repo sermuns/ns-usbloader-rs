@@ -113,7 +113,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p ${{env.CLI_NAME}}-${{env.RELEASE_VERSION}} ${{env.GUI_NAME}}-${{env.RELEASE_VERSION}}
-          cp {LICENSE-MIT,LICENSE-APACHE,README.md,CHANGELOG.md} release/
+          cp {LICENSE-MIT,LICENSE-APACHE,README.md,CHANGELOG.md} ${{env.CLI_NAME}}-${{env.RELEASE_VERSION}}/
+          cp {LICENSE-MIT,LICENSE-APACHE,README.md,CHANGELOG.md} ${{env.GUI_NAME}}-${{env.RELEASE_VERSION}}/
           if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
             cp target/${{ matrix.build.TARGET }}/release/${{env.CLI_NAME}}.exe ${{env.CLI_NAME}}-${{env.RELEASE_VERSION}}/
             cp target/${{ matrix.build.TARGET }}/release/${{env.GUI_NAME}}.exe ${{env.GUI_NAME}}-${{env.RELEASE_VERSION}}/
