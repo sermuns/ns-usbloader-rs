@@ -1,6 +1,19 @@
 # Changelog
 
-## [0.4.3](https://github.com/sermuns/ironfoil/compare/v0.4.2..0.4.3) - 2026-04-23
+## [0.4.4](https://github.com/sermuns/ironfoil/compare/v0.4.3..0.4.4) - 2026-04-23
+
+### 🐛 Bug Fixes
+
+- **(ci)** fix typo by @sermuns in [1fefaa1](https://github.com/sermuns/ironfoil/commit/1fefaa167860468f8d09fe5149860cb6de7245f9)
+- **(ci)** actually build ironfoil-gui by Samuel Åkesson in [f093a0a](https://github.com/sermuns/ironfoil/commit/f093a0a8196c76396addeef2a92adedf234c9e8d)
+- **(cli)** show correct amount of games installed by @sermuns in [770d22a](https://github.com/sermuns/ironfoil/commit/770d22adc5a1aefef45ea1c4a9cd05670db8daa3)
+
+### ⚙️ Miscellaneous Tasks
+
+- **breaking** consolidate gui and cli releasing. remove Windows installer by @sermuns in [7ea8e35](https://github.com/sermuns/ironfoil/commit/7ea8e35ba46c571a5c776527fd7feb4c7c15af06)
+- publish GUI too by @sermuns in [d69ff38](https://github.com/sermuns/ironfoil/commit/d69ff3805ee4969f8fcbbc1417b66440f3a5b7df)
+- rename release CI by @sermuns in [f2dd07f](https://github.com/sermuns/ironfoil/commit/f2dd07f5a54beba503f468918ba3443e197ae1d2)
+## [v0.4.3](https://github.com/sermuns/ironfoil/compare/v0.4.2..v0.4.3) - 2026-04-23
 
 ### 📚 Documentation
 
@@ -10,7 +23,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - don't strip release build by @sermuns in [4c0cfc0](https://github.com/sermuns/ironfoil/commit/4c0cfc02dfe880c8632e00889326fc8484fbb918)
-- release v0.4.3 by Samuel Åkesson in [0f03e08](https://github.com/sermuns/ironfoil/commit/0f03e08fa6bfeac148ce270dfae47114ba506da2)
+- release v0.4.3 by @sermuns in [8d12692](https://github.com/sermuns/ironfoil/commit/8d126926995243b31011627050c6f15a39979832)
 ## [v0.4.2](https://github.com/sermuns/ironfoil/compare/v0.4.1..v0.4.2) - 2026-04-19
 
 ### 🐛 Bug Fixes

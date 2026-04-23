@@ -107,7 +107,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Build
-        run: cargo build -p ironfoil --release --locked --target ${{ matrix.build.TARGET }}
+        run: cargo build --release --locked --target ${{ matrix.build.TARGET }}
 
       - name: Prepare release assets
         shell: bash
